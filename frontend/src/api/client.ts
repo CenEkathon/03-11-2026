@@ -1,3 +1,4 @@
+import { t } from "../i18n/i18n";
 import type {
   AssumptionsResponse,
   BriefRequest,
@@ -33,10 +34,10 @@ export class ApiError extends Error {
     if (Array.isArray(body?.detail)) {
       return body.detail.map((d) => {
         const item = d as { msg?: string };
-        return item.msg ?? "invalid input";
+        return item.msg ?? t("invalid input");
       });
     }
-    return [`Request failed with status ${this.status}`];
+    return [t("Request failed with status {status}", { status: this.status })];
   }
 }
 

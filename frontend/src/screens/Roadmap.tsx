@@ -4,8 +4,10 @@ import { Callout, Card, LabelBadge, PageHeader } from "../components/ui";
 import type { Controls, Shared } from "../appTypes";
 import type { Milestone } from "../api/types";
 import { formatMetricTarget, formatMonth } from "../lib/format";
-import { checkDraft, isDirty, rowErrors, type MilestoneDraft } from "../lib/roadmap";
+import { checkDraft, isDirty, localizeTimingError, rowErrors, type MilestoneDraft } from "../lib/roadmap";
 import { monthFromIndex, monthIndex } from "../lib/months";
+import { t } from "../i18n/i18n";
+import { useLang } from "../i18n/LanguageProvider";
 
 function toDrafts(milestones: Milestone[]): MilestoneDraft[] {
   return milestones.map((m) => ({ id: m.id, start: m.start, end: m.end, depends_on: m.depends_on ?? [] }));
@@ -27,6 +29,7 @@ function timelineMonths(horizonStart: string, horizonEnd: string, drafts: Milest
 }
 
 export function Roadmap({ shared, controls }: { shared: Shared; controls: Controls }) {
+  useLang();
   const { plan, caseInfo } = shared;
   const teamName = useMemo(() => Object.fromEntries(caseInfo.company.teams.map((t) => [t.id, t.name])), [caseInfo]);
   const [drafts, setDrafts] = useState<MilestoneDraft[]>(() => toDrafts(plan.milestones));
@@ -55,7 +58,7 @@ export function Roadmap({ shared, controls }: { shared: Shared; controls: Contro
     return {
       id: d.id,
       name: m?.name ?? d.id,
-      owner: teamName[m?.owner_team ?? ""] ?? "Owner not set",
+      owner: teamName[m?.owner_team ?? ""] ?? "Owner not set",  // English key, translated by Timeline
       start: d.start,
       end: d.end,
       dependsOn: d.depends_on,
@@ -92,19 +95,25 @@ export function Roadmap({ shared, controls }: { shared: Shared; controls: Contro
   return (
     <>
       <PageHeader
-        title="Roadmap"
-        lead="Six milestones, each starting after the one before it ends. Change a start or end month and the timeline updates. Apply to recalculate costs and workforce needs."
+        title={t("Roadmap")}
+        lead={t(
+          "{count} milestones, each starting after the one before it ends. Change a start or end month and the timeline updates. Apply to recalculate costs and workforce needs.",
+          { count: plan.milestones.length },
+        )}
         actions={<LabelBadge labelKey="roadmap" />}
       />
 
       <Card
-        title="Timeline"
-        description={`${formatMonth(plan.goal.horizon_start)} to ${formatMonth(plan.goal.horizon_end)}. The vertical line is the deadline.`}
+        title={t("Timeline")}
+        description={t("{from} to {to}. The vertical line is the deadline.", {
+          from: formatMonth(plan.goal.horizon_start),
+          to: formatMonth(plan.goal.horizon_end),
+        })}
         actions={
           dirty ? (
-            <span className="pill pill-draft">Preview: not applied</span>
+            <span className="pill pill-draft">{t("Preview: not applied")}</span>
           ) : (
-            <span className="pill">Applied</span>
+            <span className="pill">{t("Applied")}</span>
           )
         }
       >
@@ -112,20 +121,20 @@ export function Roadmap({ shared, controls }: { shared: Shared; controls: Contro
       </Card>
 
       <Card
-        title="Timing"
-        description="Finish-to-start: a milestone starts the month after its predecessor ends. Invalid timing is blocked."
+        title={t("Timing")}
+        description={t("Finish-to-start: a milestone starts the month after its predecessor ends. Invalid timing is blocked.")}
       >
         <div className="table-wrap">
           <table className="table timing-table">
-            <caption className="sr-only">Milestone start and end months</caption>
+            <caption className="sr-only">{t("Milestone start and end months")}</caption>
             <thead>
               <tr>
-                <th scope="col">Milestone</th>
-                <th scope="col">Owner</th>
-                <th scope="col">After</th>
-                <th scope="col">Start</th>
-                <th scope="col">End</th>
-                <th scope="col">Success metric</th>
+                <th scope="col">{t("Milestone")}</th>
+                <th scope="col">{t("Owner")}</th>
+                <th scope="col">{t("After")}</th>
+                <th scope="col">{t("Start")}</th>
+                <th scope="col">{t("End")}</th>
+                <th scope="col">{t("Success metric")}</th>
               </tr>
             </thead>
             <tbody>
@@ -136,16 +145,16 @@ export function Roadmap({ shared, controls }: { shared: Shared; controls: Contro
                   <tr key={d.id} className={errs.length ? "row-invalid" : undefined}>
                     <td>
                       <div className="cell-title">
-                        <span className="tl-id">{d.id}</span> {m?.name}
+                        <span className="tl-id">{d.id}</span> {m ? t(m.name) : null}
                       </div>
-                      <div className="muted small">{m?.description}</div>
+                      <div className="muted small">{m ? t(m.description) : null}</div>
                     </td>
-                    <td>{teamName[m?.owner_team ?? ""] ?? "n/a"}</td>
-                    <td>{d.depends_on.length ? d.depends_on.join(", ") : "Start"}</td>
+                    <td>{teamName[m?.owner_team ?? ""] ? t(teamName[m?.owner_team ?? ""]) : t("n/a")}</td>
+                    <td>{d.depends_on.length ? d.depends_on.join(", ") : t("Start")}</td>
                     <td>
                       <input
                         type="month"
-                        aria-label={`${d.id} start month`}
+                        aria-label={t("{id} start month", { id: d.id })}
                         aria-invalid={errs.length > 0}
                         value={d.start}
                         onChange={(e) => updateDraft(d.id, "start", e.target.value)}
@@ -154,7 +163,7 @@ export function Roadmap({ shared, controls }: { shared: Shared; controls: Contro
                     <td>
                       <input
                         type="month"
-                        aria-label={`${d.id} end month`}
+                        aria-label={t("{id} end month", { id: d.id })}
                         aria-invalid={errs.length > 0}
                         value={d.end}
                         onChange={(e) => updateDraft(d.id, "end", e.target.value)}
@@ -163,11 +172,13 @@ export function Roadmap({ shared, controls }: { shared: Shared; controls: Contro
                     <td>
                       {m ? (
                         <>
-                          {m.metric.name}
-                          <div className="muted small">Target {formatMetricTarget(m.metric.target, m.metric.unit)}</div>
+                          {t(m.metric.name)}
+                          <div className="muted small">
+                            {t("Target {value}", { value: formatMetricTarget(m.metric.target, m.metric.unit) })}
+                          </div>
                         </>
                       ) : (
-                        "n/a"
+                        t("n/a")
                       )}
                     </td>
                   </tr>
@@ -179,10 +190,17 @@ export function Roadmap({ shared, controls }: { shared: Shared; controls: Contro
 
         {showErrors.length > 0 ? (
           <div className="stack-sm">
-            <Callout tone={tone} title={serverErrors.length ? "The server rejected this timing. The plan on screen is unchanged." : "Fix before applying"}>
+            <Callout
+              tone={tone}
+              title={
+                serverErrors.length
+                  ? t("The server rejected this timing. The plan on screen is unchanged.")
+                  : t("Fix before applying")
+              }
+            >
               <ul className="error-list">
                 {showErrors.map((e) => (
-                  <li key={e}>{e}</li>
+                  <li key={e}>{localizeTimingError(e)}</li>
                 ))}
               </ul>
             </Callout>
@@ -191,13 +209,15 @@ export function Roadmap({ shared, controls }: { shared: Shared; controls: Contro
 
         <div className="action-bar">
           <button type="button" className="btn btn-primary" onClick={apply} disabled={saving || !dirty}>
-            {saving ? "Recalculating…" : "Apply timing"}
+            {saving ? t("Recalculating…") : t("Apply timing")}
           </button>
           <button type="button" className="btn" onClick={discard} disabled={!dirty}>
-            Discard changes
+            {t("Discard changes")}
           </button>
           <span className="muted small">
-            {dirty ? "Unapplied changes. The Overview and other pages still show the applied timing." : "No unapplied changes."}
+            {dirty
+              ? t("Unapplied changes. The Overview and other pages still show the applied timing.")
+              : t("No unapplied changes.")}
           </span>
         </div>
       </Card>

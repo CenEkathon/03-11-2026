@@ -20,6 +20,7 @@ MappingMethod = Literal[
     "alias_title", "alias_description", "generic_title", "generic_description", "unmapped"
 ]
 ShortfallReason = Literal["no_eligible_supply", "lead_time_too_short", "hire_not_started"]
+Lang = Literal["en", "nl"]
 Confidence = Literal["low", "medium", "high"]
 
 REVIEW_FLAG = "HR / legal / employee-representation review required"
@@ -301,6 +302,7 @@ class BriefRequest(BaseModel):
     case: CaseId = "base"
     milestone_dates: dict[str, MilestoneDates] | None = None
     assumption_overrides: dict[str, float] | None = None
+    lang: Lang = "en"  # language of the drafted text only; the numbers do not change
 
 
 class Usage(BaseModel):

@@ -14,7 +14,8 @@ import type {
   ScenarioResult,
   SensitivityRow,
 } from "../api/types";
-import { formatEur, formatMonth } from "./format";
+import { formatEur, formatFte, formatMonth } from "./format";
+import { t } from "../i18n/i18n";
 
 // ---------------------------------------------------------------- AI adoption
 export interface AdoptionPoint {
@@ -164,31 +165,36 @@ export interface Attention {
 export function attentionItems(plan: PlanResponse, scenarioId: ScenarioId): Attention[] {
   const result = plan.scenarios[scenarioId];
   if (!result) return [];
-  const t = result.totals;
+  const totals = result.totals;
   const items: Attention[] = [];
 
-  if (t.payback_month) {
+  if (totals.payback_month) {
     items.push({
       id: "payback",
       tone: "success",
-      title: `Pays back by ${formatMonth(t.payback_month)}`,
-      detail: "Cumulative net turns positive within the deadline.",
+      title: t("Pays back by {month}", { month: formatMonth(totals.payback_month) }),
+      detail: t("Cumulative net turns positive within the deadline."),
     });
   } else {
     items.push({
       id: "payback",
       tone: "warning",
-      title: "No payback before the deadline",
-      detail: `Cumulative net stays negative to the deadline. At the Dec 2028 run rate the option nets about ${formatEur(t.run_rate_net_eur_year)} a year (estimate, not a forecast).`,
+      title: t("No payback before the deadline"),
+      detail: t(
+        "Cumulative net stays negative to the deadline. At the Dec 2028 run rate the option nets about {amount} a year (estimate, not a forecast).",
+        { amount: formatEur(totals.run_rate_net_eur_year) },
+      ),
     });
   }
 
-  if (t.freed_capacity_fte_peak > 0) {
+  if (totals.freed_capacity_fte_peak > 0) {
     items.push({
       id: "freed",
       tone: "info",
-      title: `Aggregate freed capacity peaks at ${t.freed_capacity_fte_peak.toFixed(1)} FTE`,
-      detail: `${t.freed_capacity_flag}. This is an aggregate FTE only. No individual is identified or selected.`,
+      title: t("Aggregate freed capacity peaks at {fte} FTE", { fte: formatFte(totals.freed_capacity_fte_peak, 1) }),
+      detail: t("{flag}. This is an aggregate FTE only. No individual is identified or selected.", {
+        flag: t(totals.freed_capacity_flag),
+      }),
     });
   }
 
@@ -197,15 +203,20 @@ export function attentionItems(plan: PlanResponse, scenarioId: ScenarioId): Atte
     items.push({
       id: "shortfall",
       tone: "warning",
-      title: `${result.shortfalls.length} supply shortfall${result.shortfalls.length === 1 ? "" : "s"}`,
-      detail: `${unmet.toFixed(2)} unmet FTE-months. See the Workforce page for the requirements affected.`,
+      title:
+        result.shortfalls.length === 1
+          ? t("1 supply shortfall")
+          : t("{count} supply shortfalls", { count: result.shortfalls.length }),
+      detail: t("{unmet} unmet FTE-months. See the Workforce page for the requirements affected.", {
+        unmet: formatFte(unmet, 2),
+      }),
     });
   } else {
     items.push({
       id: "shortfall",
       tone: "success",
-      title: "Every requirement is covered",
-      detail: "No unmet FTE-months in this option.",
+      title: t("Every requirement is covered"),
+      detail: t("No unmet FTE-months in this option."),
     });
   }
 
