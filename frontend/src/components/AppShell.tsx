@@ -87,6 +87,7 @@ export function AppShell({ page, onNavigate, caseId, onCaseChange, busy, edited,
           <button type="button" className="btn btn-ghost btn-block" onClick={() => setLegendOpen(true)}>
             What do the labels mean?
           </button>
+          <p className="brand-credit small muted">by clanker wankers</p>
         </div>
       </aside>
 
