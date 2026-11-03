@@ -50,12 +50,10 @@ function totals(o: Partial<Totals> = {}): Totals {
     net_eur: -30,
     roi: -0.2,
     payback_month: null,
-    npv_eur: -25,
     unmet_fte_months: 0,
     freed_capacity_fte_peak: 0,
     freed_capacity_flag: "HR / legal / employee-representation review required",
-    extended_payback_month: "2029-06",
-    extended_payback_note: "Extrapolated.",
+    run_rate_net_eur_year: 400000,
     ...o,
   };
 }
@@ -179,11 +177,12 @@ describe("attention points", () => {
       scenarios: { hybrid: { ...scenario("hybrid", [], t), shortfalls } },
     }) as unknown as PlanResponse;
 
-  it("warns when there is no payback before the deadline, with the extrapolation labelled", () => {
-    const items = attentionItems(plan({ payback_month: null, extended_payback_month: "2029-06" }), "hybrid");
+  it("warns when there is no payback before the deadline and points to the run-rate estimate", () => {
+    const items = attentionItems(plan({ payback_month: null, run_rate_net_eur_year: 400000 }), "hybrid");
     const payback = items.find((i) => i.id === "payback");
     expect(payback?.tone).toBe("warning");
-    expect(payback?.detail).toContain("Not a forecast");
+    expect(payback?.detail).toContain("run rate");
+    expect(payback?.detail).toContain("not a forecast");
   });
 
   it("reports payback as a success when it falls within the deadline", () => {

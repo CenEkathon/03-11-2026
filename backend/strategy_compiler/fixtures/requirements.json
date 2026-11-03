@@ -1,26 +1,17 @@
 {
   "_meta": {
-    "label": "MOCK DEMAND - FTE, roles and minimum proficiency are assumptions for the demo. Skill ids come from taxonomy.json. Vacancy evidence is attached by demand.py as an external observation.",
-    "window_rule": "Each requirement uses its milestone window. Requirements need FTE in every month of the window."
+    "label": "MOCK DEMAND - roles, FTE and minimum levels are assumptions for the demo. Skill ids come from taxonomy.json.",
+    "level_scale": "1 basic, 2 working, 3 expert",
+    "window_rule": "Each requirement needs its FTE in every month of its milestone."
   },
   "requirements": [
-    { "id": "R01", "milestone_id": "M1", "role": "AI governance lead", "skill_id": "ai_governance", "min_proficiency": 3, "fte": 2, "source": "assumed", "confidence": "medium", "rationale": "Policy and model inventory need a named governance owner." },
-    { "id": "R02", "milestone_id": "M1", "role": "AI Act and GDPR compliance analyst", "skill_id": "ai_act_gdpr_compliance", "min_proficiency": 3, "fte": 2, "source": "assumed", "confidence": "medium", "rationale": "Risk classification of AI use cases under AI Act and GDPR." },
-    { "id": "R03", "milestone_id": "M2", "role": "Data engineer", "skill_id": "data_engineering", "min_proficiency": 3, "fte": 5, "source": "assumed", "confidence": "medium", "rationale": "Consolidating KYC customer files into one data layer." },
-    { "id": "R04", "milestone_id": "M2", "role": "Data quality lead", "skill_id": "data_quality", "min_proficiency": 3, "fte": 3, "source": "assumed", "confidence": "medium", "rationale": "Reconciling duplicate and inconsistent customer records." },
-    { "id": "R05", "milestone_id": "M2", "role": "Cloud data platform engineer", "skill_id": "cloud_data_platforms", "min_proficiency": 3, "fte": 3, "source": "assumed", "confidence": "medium", "rationale": "Hosting the consolidated layer in the cloud platform." },
-    { "id": "R06", "milestone_id": "M3", "role": "Machine learning engineer", "skill_id": "machine_learning", "min_proficiency": 4, "fte": 4, "source": "assumed", "confidence": "medium", "rationale": "Building and tuning the alert-triage model." },
-    { "id": "R07", "milestone_id": "M3", "role": "NLP specialist", "skill_id": "nlp", "min_proficiency": 3, "fte": 3, "source": "assumed", "confidence": "medium", "rationale": "Extracting information from unstructured KYC narratives." },
-    { "id": "R08", "milestone_id": "M3", "role": "AML alert-triage specialist", "skill_id": "aml_monitoring", "min_proficiency": 3, "fte": 4, "source": "assumed", "confidence": "medium", "rationale": "Labelling alerts and reviewing AI suggestions in the pilot." },
-    { "id": "R09", "milestone_id": "M3", "role": "Process designer", "skill_id": "process_redesign", "min_proficiency": 3, "fte": 2, "source": "assumed", "confidence": "medium", "rationale": "Redesigning the review workflow around AI assistance." },
-    { "id": "R10", "milestone_id": "M4", "role": "Model validator", "skill_id": "model_validation", "min_proficiency": 4, "fte": 3, "source": "assumed", "confidence": "medium", "rationale": "Independent validation of the triage model." },
-    { "id": "R11", "milestone_id": "M4", "role": "Explainability analyst", "skill_id": "explainable_ai", "min_proficiency": 3, "fte": 2, "source": "assumed", "confidence": "medium", "rationale": "Explaining model decisions to validators and regulators." },
-    { "id": "R12", "milestone_id": "M5", "role": "MLOps engineer", "skill_id": "mlops", "min_proficiency": 4, "fte": 4, "source": "assumed", "confidence": "medium", "rationale": "Deploying and monitoring models across three business lines." },
-    { "id": "R13", "milestone_id": "M5", "role": "KYC reviewer (AI-assisted)", "skill_id": "kyc", "min_proficiency": 3, "fte": 8, "source": "assumed", "confidence": "medium", "rationale": "Reviewers who work with AI suggestions in the 40% scale-up." },
-    { "id": "R14", "milestone_id": "M5", "role": "Change lead", "skill_id": "change_management", "min_proficiency": 3, "fte": 2, "source": "assumed", "confidence": "medium", "rationale": "Managing adoption and training in the business lines." },
-    { "id": "R15", "milestone_id": "M5", "role": "Generative AI engineer", "skill_id": "generative_ai", "min_proficiency": 3, "fte": 3, "source": "assumed", "confidence": "low", "rationale": "Drafting case summaries with generative AI (assumed scope)." },
-    { "id": "R16", "milestone_id": "M6", "role": "Product owner", "skill_id": "product_ownership", "min_proficiency": 3, "fte": 3, "source": "assumed", "confidence": "medium", "rationale": "Owning the new operating model backlog." },
-    { "id": "R17", "milestone_id": "M6", "role": "KYC reviewer (AI-assisted, all lines)", "skill_id": "kyc", "min_proficiency": 3, "fte": 10, "source": "assumed", "confidence": "medium", "rationale": "Reviewers needed to run 60% AI-assisted volume." },
-    { "id": "R18", "milestone_id": "M6", "role": "Quality assurance lead", "skill_id": "case_quality_assurance", "min_proficiency": 3, "fte": 2, "source": "assumed", "confidence": "medium", "rationale": "Sampling AI-assisted decisions for quality." }
+    { "id": "R01", "milestone_id": "M1", "role": "AI governance lead", "skill_id": "ai_governance", "min_proficiency": 3, "fte": 1, "source": "assumed", "confidence": "medium", "rationale": "Owns the AI use policy and the model inventory." },
+    { "id": "R02", "milestone_id": "M1", "role": "Data quality lead", "skill_id": "data_quality", "min_proficiency": 2, "fte": 3, "source": "assumed", "confidence": "medium", "rationale": "Cleans duplicate KYC customer records." },
+    { "id": "R03", "milestone_id": "M1", "role": "Data engineer", "skill_id": "data_engineering", "min_proficiency": 2, "fte": 3, "source": "assumed", "confidence": "medium", "rationale": "Brings KYC customer data into one place." },
+    { "id": "R04", "milestone_id": "M2", "role": "Machine learning engineer", "skill_id": "machine_learning", "min_proficiency": 3, "fte": 3, "source": "assumed", "confidence": "medium", "rationale": "Builds and tunes the alert-triage model." },
+    { "id": "R05", "milestone_id": "M2", "role": "Model validator", "skill_id": "model_validation", "min_proficiency": 3, "fte": 2, "source": "assumed", "confidence": "medium", "rationale": "Independent validation before scale-up." },
+    { "id": "R06", "milestone_id": "M3", "role": "Alert triage specialist", "skill_id": "aml_monitoring", "min_proficiency": 2, "fte": 6, "source": "assumed", "confidence": "medium", "rationale": "Reviews AI suggestions on alerts in the scaled-up flow." },
+    { "id": "R07", "milestone_id": "M3", "role": "Change lead", "skill_id": "change_management", "min_proficiency": 2, "fte": 2, "source": "assumed", "confidence": "medium", "rationale": "Leads the move to the new way of working in three business lines." },
+    { "id": "R08", "milestone_id": "M4", "role": "AI-assisted KYC reviewer", "skill_id": "kyc", "min_proficiency": 3, "fte": 8, "source": "assumed", "confidence": "medium", "rationale": "Reviewers who work with AI suggestions across all business lines." }
   ]
 }

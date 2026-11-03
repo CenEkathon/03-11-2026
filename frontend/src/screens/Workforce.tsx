@@ -4,7 +4,7 @@ import { Callout, Card, ChartFigure, Dialog, DataTable, LabelBadge, PageHeader, 
 import type { Shared } from "../appTypes";
 import { SCENARIO_IDS, type Requirement, type ScenarioId, type SkillFit } from "../api/types";
 import { formatFte, formatMonth, formatMonthRange } from "../lib/format";
-import { REASON_LABEL, RECOMMENDED, SCENARIO_SHORT_LABEL } from "../lib/labels";
+import { LEVEL_NAMES, REASON_LABEL, RECOMMENDED, SCENARIO_SHORT_LABEL } from "../lib/labels";
 import { coverageRows } from "../lib/viewModels";
 
 export function Workforce({ shared }: { shared: Shared }) {
@@ -25,7 +25,7 @@ export function Workforce({ shared }: { shared: Shared }) {
   const columns: Column<Requirement>[] = [
     { key: "role", header: "Role (mock)", render: (r) => r.role },
     { key: "skill", header: "Skill", render: (r) => skillLabels[r.skill_id] ?? r.skill_id },
-    { key: "level", header: "Min level", numeric: true, render: (r) => `${r.min_proficiency} of 5` },
+    { key: "level", header: "Min level", numeric: true, render: (r) => LEVEL_NAMES[r.min_proficiency] ?? `${r.min_proficiency} of 3` },
     { key: "fte", header: "FTE", numeric: true, render: (r) => formatFte(r.fte) },
     {
       key: "eligible",

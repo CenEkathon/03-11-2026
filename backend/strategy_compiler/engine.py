@@ -37,7 +37,7 @@ from .contracts import (
     Totals,
 )
 from .demand import expand_requirements, skill_fit
-from .finance import ONE_OFF, Book, CostItem, build_book, extended_cumulative, npv
+from .finance import ONE_OFF, Book, CostItem, build_book
 from .planner import Allocation, RawScenario, run_scenario
 from .roadmap import RoadmapError, adoption_by_month, apply_dates, validate_roadmap
 from .timeline import month_range, parse_month
@@ -45,16 +45,16 @@ from .timeline import month_range, parse_month
 SCENARIO_IDS: tuple[ScenarioId, ...] = ("reskill_led", "hire_led", "hybrid")
 
 _RATIONALE = {
-    "redeploy": "Already at or above the required proficiency in a contributing team. Base salary is not new cost; only backfill and onboarding are.",
-    "reskill": "One or two proficiency levels short, with an adjacent skill. Training finishes before the requirement starts, then backfill and a salary uplift apply.",
-    "external": "Capped contractor bridge while hiring lead time runs out. Not a permanent solution.",
-    "hire": "Remaining gap after the earlier sources in this scenario, hired from the earliest possible start (programme start plus time to hire).",
+    "redeploy": "Already at the required level. They are paid already, so the new cost is a move cost plus backfill of their old work.",
+    "reskill": "One or two levels short, with a related skill. Training finishes before the requirement starts, then backfill and a pay rise apply.",
+    "external": "Contractors bridge up to 30% of a need while lead time runs out. Not a permanent solution.",
+    "hire": "Remaining gap after the earlier sources in this scenario, hired from the earliest possible start (programme start plus hire lead time).",
 }
 _FORMULA = {
-    "redeploy": "one-off = onboarding per person; recurring = FTE x backfill share x loaded monthly cost",
-    "reskill": "one-off = training days x day rate + backfill during training; recurring = FTE x (backfill share + salary uplift) x loaded monthly cost",
+    "redeploy": "one-off = move cost per person; recurring = FTE x backfill share x yearly cost / 12",
+    "reskill": "one-off = training cost per person + move cost; recurring = FTE x (backfill share x yearly cost / 12 + yearly pay rise / 12)",
     "external": "recurring = FTE x contractor day rate x 20 working days",
-    "hire": "one-off = headcount x (recruiter fee x salary + onboarding + mentor days x loaded day cost); recurring = headcount x loaded monthly salary",
+    "hire": "one-off = headcount x hire cost; recurring = headcount x yearly cost / 12, from start to requirement end",
 }
 
 
@@ -70,7 +70,6 @@ def compute_plan(req: PlanRequest) -> PlanResponse:
     horizon = month_range(goal.horizon_start, goal.horizon_end)
     requirements = expand_requirements(load_requirement_specs(), milestones)
     employees = list(load_employees())
-    emp_by_id = {e.employee_id: e for e in employees}
     contributing = {t.id for t in company.teams if t.contributing}
     families = {s.id: s.family for s in load_taxonomy().skills}
     adoption = adoption_by_month(milestones, horizon)
@@ -80,7 +79,7 @@ def compute_plan(req: PlanRequest) -> PlanResponse:
     scenarios: dict[ScenarioId, ScenarioResult] = {}
     for sid in scenario_ids:
         raw = run_scenario(sid, requirements, employees, contributing, families, a, horizon)
-        scenarios[sid] = _scenario_result(sid, raw, requirements, milestones, emp_by_id, a, goal, adoption, horizon)
+        scenarios[sid] = _scenario_result(sid, raw, requirements, milestones, a, goal, adoption, horizon)
 
     fits = [skill_fit(r, employees, contributing, families, evidence) for r in requirements]
     return PlanResponse(
@@ -121,13 +120,12 @@ def _scenario_result(
     raw: RawScenario,
     requirements: list[Requirement],
     milestones: list[Milestone],
-    emp_by_id: dict,
     a: dict[str, float],
     goal: Goal,
     adoption: dict[str, float],
     horizon: list[str],
 ) -> ScenarioResult:
-    book = build_book(raw, emp_by_id, a, goal, milestones, requirements, adoption, horizon)
+    book = build_book(raw, a, goal, milestones, requirements, adoption, horizon)
     meta = SCENARIO_META[sid]
     return ScenarioResult(
         scenario=sid,
@@ -136,7 +134,7 @@ def _scenario_result(
         actions=_actions(sid, raw, requirements, milestones, book.items, a),
         monthly=_monthly(book),
         shortfalls=_shortfalls(raw, requirements),
-        totals=_totals(book, a, goal, milestones, raw),
+        totals=_totals(book, raw),
     )
 
 
@@ -163,7 +161,7 @@ def _monthly(book: Book) -> list[MonthlyPoint]:
     return points
 
 
-def _totals(book: Book, a: dict[str, float], goal: Goal, milestones: list[Milestone], raw: RawScenario) -> Totals:
+def _totals(book: Book, raw: RawScenario) -> Totals:
     cost_one = sum(book.one_off)
     cost_rec = sum(book.recurring)
     cost_total = cost_one + cost_rec
@@ -173,10 +171,6 @@ def _totals(book: Book, a: dict[str, float], goal: Goal, milestones: list[Milest
     first_cost = next((i for i, (o, r) in enumerate(zip(book.one_off, book.recurring, strict=True)) if o + r > EPS), None)
     payback = _payback(book.months, book.net, first_cost)
 
-    ext_months, ext_cum = extended_cumulative(book, a, goal, milestones)
-    ext_net = [ext_cum[0]] + [ext_cum[i] - ext_cum[i - 1] for i in range(1, len(ext_cum))]
-    ext_payback = _payback(ext_months, ext_net, first_cost)
-
     return Totals(
         cost_one_off_eur=cost_one,
         cost_recurring_eur=cost_rec,
@@ -185,14 +179,9 @@ def _totals(book: Book, a: dict[str, float], goal: Goal, milestones: list[Milest
         net_eur=net,
         roi=(net / cost_total) if cost_total > EPS else None,
         payback_month=payback,
-        npv_eur=npv(book.net, a["discount_rate_annual"]),
+        run_rate_net_eur_year=(book.benefit[-1] - book.recurring[-1]) * 12 if book.months else 0.0,
         unmet_fte_months=sum(u.unmet_fte for u in raw.unmet),
         freed_capacity_fte_peak=max(book.freed_fte) if book.freed_fte else 0.0,
-        extended_payback_month=ext_payback,
-        extended_payback_note=(
-            "Extrapolated beyond the deadline: holds the final adoption and 100% coverage, keeps platform run cost, "
-            "adds no further programme cost. Not a forecast."
-        ),
     )
 
 
@@ -294,9 +283,11 @@ def _actions(
                         "fte_avg": round(fte_avg, 4),
                         "people": float(people),
                         "backfill_share": a["backfill_share"],
+                        "cost_per_fte_year_eur": a["cost_per_fte_year_eur"],
+                        "redeploy_cost_eur": a["redeploy_cost_eur"],
+                        "reskill_cost_eur": a["reskill_cost_eur"],
+                        "hire_cost_eur": a["hire_cost_eur"],
                         "contractor_day_rate_eur": a["contractor_day_rate_eur"],
-                        "training_day_rate_eur": a["training_day_rate_eur"],
-                        "recruiter_fee_pct": a["recruiter_fee_pct"],
                     },
                     source="mock_assumption",
                     confidence="low",

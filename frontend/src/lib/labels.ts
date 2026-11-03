@@ -61,6 +61,9 @@ export const SCENARIO_SLOT: Record<ScenarioId, number> = {
   hybrid: 2,
 };
 
+/** Skill levels in the mock workforce and requirements: 1 basic, 2 working, 3 expert. */
+export const LEVEL_NAMES: Record<number, string> = { 1: "1 basic", 2: "2 working", 3: "3 expert" };
+
 export const RECOMMENDED: ScenarioId = "hybrid";
 
 export const DISCLAIMER =

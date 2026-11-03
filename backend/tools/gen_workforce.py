@@ -1,12 +1,12 @@
-"""Deterministic generator for the SYNTHETIC KBC-example workforce fixture.
+"""Deterministic generator for the SYNTHETIC workforce fixture (about 60 fictional people).
 
 Usage (from backend/):  uv run python tools/gen_workforce.py
 
 Writes strategy_compiler/fixtures/workforce.csv. Every record is fictional: IDs only, no names,
 no personal or sensitive attributes. Skill profiles are assumptions that shape the demo supply.
 
-Columns: employee_id, team_id, role, grade, fte, availability, cost_band, is_mock, skills_json, training_json.
-skills_json is a JSON object (skill_id -> proficiency 1..5). training_json is a JSON list of training records.
+Columns: employee_id, team_id, role, fte, availability, is_mock, skills_json.
+skills_json is a JSON object (skill_id -> level 1 basic, 2 working, 3 expert).
 The loader in config.py parses this file; the label that used to sit in a _meta block lives in config.LABELS.
 """
 
@@ -23,102 +23,52 @@ COLUMNS = [
     "employee_id",
     "team_id",
     "role",
-    "grade",
     "fte",
     "availability",
-    "cost_band",
     "is_mock",
     "skills_json",
-    "training_json",
 ]
 
-# core: skill -> (min, max) proficiency, always present
+# core: skill -> (min, max) level, always present
 # secondary: skill -> (min, max, probability) present with probability p
 TEAMS: dict[str, dict] = {
     "AML-OPS": {
-        "size": 80, "avail": (0.30, 0.50),
-        "roles": ["KYC analyst", "Alert triage analyst", "Senior KYC reviewer", "Team lead"],
-        "core": {"kyc": (3, 5), "aml_monitoring": (2, 4), "sanctions_screening": (2, 4),
-                 "suspicious_activity_reporting": (2, 4), "document_review": (2, 4)},
-        "secondary": {"case_quality_assurance": (2, 4, 0.6), "fraud_prevention": (1, 3, 0.25),
-                      "customer_operations": (2, 4, 0.25), "python": (1, 2, 0.15), "data_analysis": (1, 2, 0.15)},
-    },
-    "FCC": {
-        "size": 25, "avail": (0.40, 0.60),
-        "roles": ["Compliance officer", "AML policy adviser", "Compliance analyst"],
-        "core": {"regulatory_compliance": (3, 5), "ai_act_gdpr_compliance": (2, 4), "ai_governance": (2, 4),
-                 "risk_assessment": (3, 5), "kyc": (2, 4), "aml_monitoring": (2, 4)},
-        "secondary": {"internal_audit": (2, 4, 0.5), "stakeholder_management": (2, 4, 0.5)},
+        "size": 24, "avail": (0.25, 0.40),
+        "roles": ["KYC analyst", "Alert triage analyst", "Senior KYC reviewer"],
+        "core": {"kyc": (2, 3)},
+        "secondary": {"aml_monitoring": (1, 3, 0.6), "change_management": (1, 2, 0.1)},
     },
     "DATA-ENG": {
-        "size": 40, "avail": (0.40, 0.60),
-        "roles": ["Data engineer", "ETL developer", "Data platform developer"],
-        "core": {"data_engineering": (3, 5), "sql": (3, 5), "python": (2, 4), "data_quality": (2, 4),
-                 "data_governance": (2, 4), "cloud_data_platforms": (2, 4)},
-        "secondary": {"devops": (1, 3, 0.5), "mlops": (1, 3, 0.5), "machine_learning": (1, 2, 0.3),
-                      "data_analysis": (2, 3, 0.3)},
+        "size": 14, "avail": (0.30, 0.50),
+        "roles": ["Data engineer", "ETL developer"],
+        "core": {"data_engineering": (2, 3), "data_quality": (2, 3), "python": (2, 3)},
+        "secondary": {"machine_learning": (1, 2, 0.3)},
     },
-    "DS-AI": {
-        "size": 30, "avail": (0.50, 0.70),
-        "roles": ["Data scientist", "Machine learning engineer", "NLP engineer"],
-        "core": {"machine_learning": (3, 5), "python": (3, 5), "statistical_modelling": (3, 5),
-                 "artificial_intelligence": (3, 5), "generative_ai": (2, 4), "data_analysis": (2, 4),
-                 "mlops": (2, 3)},
-        "secondary": {"nlp": (2, 5, 0.7), "sql": (2, 4, 0.3), "data_engineering": (1, 2, 0.3)},
+    "DATA-SCI": {
+        "size": 8, "avail": (0.40, 0.60),
+        "roles": ["Data scientist", "Machine learning engineer"],
+        "core": {"machine_learning": (2, 3), "python": (3, 3)},
+        "secondary": {"data_engineering": (1, 2, 0.4), "model_validation": (1, 2, 0.3)},
     },
-    "MRV": {
-        "size": 20, "avail": (0.30, 0.50),
-        "roles": ["Model validator", "Model risk analyst", "Quantitative analyst"],
-        "core": {"model_validation": (3, 5), "model_risk_management": (2, 4), "statistical_modelling": (3, 5),
-                 "explainable_ai": (2, 4), "python": (2, 4)},
-        "secondary": {"ai_governance": (2, 4, 0.7), "machine_learning": (2, 3, 0.3)},
+    "COMPLIANCE": {
+        "size": 9, "avail": (0.30, 0.50),
+        "roles": ["Compliance adviser", "Model risk analyst", "Model validator"],
+        "core": {"ai_governance": (2, 3)},
+        "secondary": {"model_validation": (2, 3, 0.7), "kyc": (1, 2, 0.3), "aml_monitoring": (1, 2, 0.4)},
     },
-    "PLAT": {
-        "size": 40, "avail": (0.30, 0.50),
-        "roles": ["Cloud engineer", "Platform engineer", "Security engineer", "Solution architect"],
-        "core": {"cloud_data_platforms": (3, 5), "devops": (2, 4), "cyber_security": (2, 4),
-                 "identity_access_management": (2, 4)},
-        "secondary": {"solution_architecture": (2, 4, 0.6), "python": (2, 3, 0.5), "mlops": (1, 2, 0.3)},
-    },
-    "DIGI": {
-        "size": 30, "avail": (0.40, 0.60),
-        "roles": ["Product owner", "Scrum master", "Business analyst", "Change consultant"],
-        "core": {"product_ownership": (3, 5), "agile_delivery": (3, 5), "change_management": (3, 5),
-                 "stakeholder_management": (3, 5), "process_redesign": (2, 4)},
-        "secondary": {"solution_architecture": (2, 4, 0.5), "customer_operations": (2, 3, 0.4)},
-    },
-    "RISK": {
-        "size": 35, "avail": (0.30, 0.50),
-        "roles": ["Risk analyst", "Regulatory reporting analyst", "Credit risk analyst"],
-        "core": {"credit_risk": (3, 5), "risk_assessment": (3, 5), "regulatory_compliance": (2, 4),
-                 "data_analysis": (2, 4), "sql": (2, 4)},
-        "secondary": {"internal_audit": (2, 4, 0.5), "data_governance": (2, 4, 0.6)},
+    "CHANGE": {
+        "size": 5, "avail": (0.30, 0.50),
+        "roles": ["Change lead", "Business analyst"],
+        "core": {"change_management": (2, 3)},
+        "secondary": {"ai_governance": (1, 1, 0.3), "kyc": (1, 2, 0.5)},
     },
 }
-
-COURSES = [
-    ("CRS-PY-01", "Python for analysts", 3),
-    ("CRS-ML-01", "Machine learning fundamentals", 5),
-    ("CRS-AML-01", "AML typologies workshop", 2),
-    ("CRS-AI-01", "AI Act awareness", 1),
-    ("CRS-CLD-01", "Cloud fundamentals", 3),
-    ("CRS-DQ-01", "Data quality practitioner", 3),
-    ("CRS-PO-01", "Agile product ownership", 2),
-    ("CRS-MR-01", "Model risk management basics", 2),
-]
-
-
-def _months_between(rng: random.Random) -> str:
-    year = rng.choice([2025, 2026])
-    month = rng.randint(1, 12) if year == 2025 else rng.randint(1, 9)
-    return f"{year}-{month:02d}"
 
 
 def build(seed: int = SEED) -> list[dict]:
     rng = random.Random(seed)
     employees: list[dict] = []
     counter = 0
-    grade_for_band = {"A": "G4", "B": "G5", "C": "G6", "D": "G7"}
     for team_id, profile in TEAMS.items():
         for _ in range(profile["size"]):
             counter += 1
@@ -128,21 +78,13 @@ def build(seed: int = SEED) -> list[dict]:
             for skill_id, (lo, hi, p) in profile["secondary"].items():
                 if rng.random() < p:
                     skills[skill_id] = rng.randint(lo, hi)
-            band = rng.choices(["A", "B", "C", "D"], weights=[3, 4, 2, 1])[0]
-            training = []
-            for course_id, label, days in rng.sample(COURSES, k=rng.randint(0, 3)):
-                training.append({"course_id": course_id, "course_label": label,
-                                 "completed": _months_between(rng), "days": float(days)})
             employees.append({
                 "employee_id": f"EMP-{counter:04d}",
                 "team_id": team_id,
                 "role": rng.choice(profile["roles"]),
-                "grade": grade_for_band[band],
-                "fte": 0.8 if rng.random() < 0.15 else 1.0,
+                "fte": 1.0,
                 "availability": round(rng.uniform(*profile["avail"]), 2),
                 "skills": dict(sorted(skills.items())),
-                "training_history": training,
-                "cost_band": band,
                 "is_mock": True,
             })
     return employees
@@ -153,13 +95,10 @@ def to_row(e: dict) -> dict[str, str]:
         "employee_id": e["employee_id"],
         "team_id": e["team_id"],
         "role": e["role"],
-        "grade": e["grade"],
         "fte": f"{e['fte']:g}",
         "availability": f"{e['availability']:.2f}",
-        "cost_band": e["cost_band"],
         "is_mock": "true",
         "skills_json": json.dumps(e["skills"], ensure_ascii=False, sort_keys=True),
-        "training_json": json.dumps(e["training_history"], ensure_ascii=False),
     }
 
 

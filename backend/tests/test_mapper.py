@@ -39,7 +39,7 @@ def test_english_title_alias_keeps_original_phrase_and_confidence(taxonomy):
     assert res["data_engineering"].confidence == 0.9
     assert res["data_engineering"].method == "alias_title"
     assert res["data_engineering"].posting_id == "p1"
-    assert res["cloud_data_platforms"].original_phrase == "Azure"
+    assert "cloud_data_platforms" not in res  # not a skill in the 9-skill taxonomy
 
 
 def test_dutch_description_alias(taxonomy):
@@ -83,9 +83,9 @@ def test_title_beats_description_for_same_skill(taxonomy):
 
 
 def test_word_boundaries_for_short_aliases(taxonomy):
-    assert "sql" not in _by_skill(map_text("sqlite and sailing", "description", taxonomy))
-    assert "artificial_intelligence" not in _by_skill(map_text("sailing and fail", "description", taxonomy))
-    assert "sql" in _by_skill(map_text("Solid SQL skills", "description", taxonomy))
+    assert "aml_monitoring" not in _by_skill(map_text("Amlet and sailing", "description", taxonomy))
+    assert "machine_learning" not in _by_skill(map_text("machine learnings", "description", taxonomy))
+    assert "aml_monitoring" in _by_skill(map_text("Solid AML skills", "description", taxonomy))
 
 
 def test_matcher_is_consistent_with_map_text(taxonomy):

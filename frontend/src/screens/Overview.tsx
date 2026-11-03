@@ -45,7 +45,8 @@ export function Overview({ shared, controls }: { shared: Shared; controls: Contr
     { key: "c", header: "Cost to deadline", numeric: true, render: (r) => formatEur(r.t.cost_total_eur) },
     { key: "b", header: "Benefit to deadline", numeric: true, render: (r) => formatEur(r.t.benefit_eur) },
     { key: "n", header: "Net", numeric: true, render: (r) => formatEur(r.t.net_eur) },
-    { key: "p", header: "Payback", render: (r) => (r.t.payback_month ? formatMonth(r.t.payback_month) : "After deadline") },
+    { key: "p", header: "Payback by deadline", render: (r) => (r.t.payback_month ? formatMonth(r.t.payback_month) : "Not by deadline") },
+    { key: "rr", header: "Yearly net at Dec 2028 run rate (estimate)", numeric: true, render: (r) => formatEur(r.t.run_rate_net_eur_year) },
   ];
   const compareRows: Row[] = SCENARIO_IDS.filter((id) => plan.scenarios[id]).map((id) => ({ id, t: plan.scenarios[id].totals }));
 
@@ -93,17 +94,17 @@ export function Overview({ shared, controls }: { shared: Shared; controls: Contr
       <KpiRow>
         <Kpi label="Cost to deadline" value={formatEur(t.cost_total_eur)} sub={`One-off ${formatEur(t.cost_one_off_eur)}`} />
         <Kpi label="Benefit to deadline" value={formatEur(t.benefit_eur)} sub="Fewer costly reviews" />
-        <Kpi
-          label="Net to deadline"
-          value={formatEur(t.net_eur)}
-          tone={t.net_eur < 0 ? "bad" : "good"}
-          sub={`NPV ${formatEur(t.npv_eur)}`}
-        />
+        <Kpi label="Net to deadline" value={formatEur(t.net_eur)} tone={t.net_eur < 0 ? "bad" : "good"} />
         <Kpi label="ROI to deadline" value={formatPct(t.roi)} tone={t.roi !== null && t.roi < 0 ? "bad" : "good"} sub="(benefit − cost) ÷ cost" />
         <Kpi
           label="Payback"
           value={t.payback_month ? formatMonth(t.payback_month) : "Not by deadline"}
-          sub={t.extended_payback_month ? `Extrapolated ${formatMonth(t.extended_payback_month)}, not a forecast` : undefined}
+        />
+        <Kpi
+          label="Yearly net at Dec 2028 run rate"
+          value={formatEur(t.run_rate_net_eur_year)}
+          tone={t.run_rate_net_eur_year < 0 ? "bad" : "good"}
+          sub="Estimate, not a forecast"
         />
       </KpiRow>
 
@@ -168,7 +169,7 @@ export function Overview({ shared, controls }: { shared: Shared; controls: Contr
             </p>
             {lowestCost ? <p className="small">It has the lowest cost to the deadline of the three options.</p> : null}
             <p className="small muted">
-              Decisions for approval: the roadmap timing, the model-risk gate before scale-up (M4 before M5), and any workforce
+              Decisions for approval: the roadmap timing, the model-risk gate before scale-up (M2 before M3), and any workforce
               change, which needs HR, legal and employee-representation review.
             </p>
           </div>

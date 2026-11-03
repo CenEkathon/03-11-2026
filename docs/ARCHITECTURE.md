@@ -31,7 +31,7 @@ roadmap.py ─► demand.py ─► supply.py (Ledger) ─► planner.py ─► f
 | `demand.py` | Requirements per milestone, FTE by month, skill-fit evidence, observed vacancy share | No |
 | `supply.py` | `Ledger`: per-employee, per-month programme capacity. Coverage and gap helpers | No |
 | `planner.py` | Scenario source order, month-by-month allocation, training and hire events | No |
-| `finance.py` | Cost items, monthly benefit, cumulative net, extended view, NPV | No |
+| `finance.py` | Cost items, monthly benefit, cumulative net, payback | No |
 | `engine.py` | Orchestrates one plan; builds actions, shortfalls, monthly points and totals; sensitivity | No |
 | `narrative.py` | Brief prose from aggregates only. Cache, usage log, template fallback | **Yes, optional, explain-only** |
 | `api.py` | Thin FastAPI layer. No business logic | No |
@@ -42,8 +42,8 @@ roadmap.py ─► demand.py ─► supply.py (Ledger) ─► planner.py ─► f
 All rules are deterministic and covered by tests in `backend/tests/`.
 
 ### 2.1 Timeline and roadmap
-- Milestones use the chain `M1 → M2 → … → M6`, with finish-to-start dependencies. Each milestone must start after every predecessor ends. The validator also rejects cycles, unknown dependencies, inverted windows and any date outside the 24-month horizon (Jan 2027 to Dec 2028).
-- **Adoption ramp.** A milestone's `adoption_share_target` is reached at its last month. It ramps linearly from the previous target across the milestone's months. Example: M5 runs from 0.15 to 0.40 over Mar–Jun 2028.
+- Milestones use the chain `M1 → M2 → M3 → M4`, with finish-to-start dependencies. Each milestone must start after every predecessor ends. The validator also rejects cycles, unknown dependencies, inverted windows and any date outside the 24-month horizon (Jan 2027 to Dec 2028).
+- **Adoption ramp.** A milestone's `adoption_share_target` is reached at its last month. It ramps linearly from the previous target across the milestone's months. Example: M3 runs from 0.15 to 0.40 over Jan–Jun 2028.
 
 ### 2.2 Demand
 - Each requirement takes its milestone's window. FTE is constant across that window.
@@ -56,7 +56,7 @@ All rules are deterministic and covered by tests in `backend/tests/`.
 - Monthly capacity per employee is `fte × availability`. `availability` is the share free for programme work after business-as-usual load.
 - Every booking reduces the ledger. A booking that would exceed the remaining capacity raises an error. Tests verify that no employee is booked beyond capacity in any scenario.
 - Training uses the employee's whole programme capacity in each training month.
-- Teams flagged `contributing: false` (Risk and Regulatory Reporting in the fixture) have zero programme capacity.
+- Teams flagged `contributing: false` have zero programme capacity. All five demo teams are contributing; the rule stays in code.
 
 ### 2.4 Scenario policies (source order per requirement)
 
@@ -66,34 +66,34 @@ All rules are deterministic and covered by tests in `backend/tests/`.
 | Hire-led | hire → external → redeploy → reskill | Hires from the earliest possible start, then fills the remainder. |
 | **Hybrid (recommended)** | redeploy → reskill → external → hire | Uses the existing workforce first and hires only the residual. |
 
-- **Reskill.** Training days = `gap × training_days_per_level`. Training months = `ceil(days / 20)`. These months are scheduled immediately before the requirement starts and must not fall before the programme start.
-- **External.** Capped at `contractor_max_share × requirement FTE`, per month.
-- **Hire.** Start = `max(requirement start, programme start + time_to_hire)`. Headcount = largest residual need across the hire months. Coverage is full from the start month. Ramp-up is modelled as a mentoring cost (see §5).
+- **Reskill.** Training takes `reskill_training_months` (fixed). These months are scheduled immediately before the requirement starts and must not fall before the programme start.
+- **External.** Capped at `CONTRACTOR_MAX_SHARE` (30%, a policy constant) × requirement FTE, per month.
+- **Hire.** Start = `max(requirement start, programme start + hire_lead_time_months)`. Headcount = largest residual need across the hire months. Coverage is full from the start month. Ramp-up is included in the one-off hire cost.
 - **Unmet FTE** carries one reason: `hire_not_started`, `lead_time_too_short` or `no_eligible_supply`.
 
 ### 2.5 Finance (monthly, EUR, all mock)
 
+Twelve assumptions drive the money (`fixtures/assumptions.yaml`). Change costs are one number per step in `fixtures/roadmap.json`.
+
 | Item | Kind | Formula |
 |---|---|---|
-| Redeploy backfill | recurring | `FTE × backfill_share × loaded monthly cost` |
-| Redeploy or reskill onboarding | one-off | `redeploy_onboarding_eur` per person per requirement |
-| Training | one-off | `training days × day rate` (first training month) plus `backfill_share × loaded monthly cost` in each training month |
-| Reskill salary uplift | recurring | `FTE × reskill_salary_uplift_pct × loaded monthly cost` |
-| Contractors | recurring | `FTE × contractor_day_rate × 20` |
-| Hire recruitment | one-off | `headcount × recruiter_fee_pct × band-C salary` |
-| Hire onboarding | one-off | `headcount × hire_onboarding_eur` |
-| Hire mentoring | one-off | `headcount × hire_mentoring_days × loaded monthly cost / 20` |
-| Hire salary | recurring | `headcount × loaded monthly cost`, from start to requirement end |
-| Technology and change | one-off | `tech_change_one_off_Mx`, spread evenly across that milestone's months |
-| Platform run | recurring | `platform_run_eur_month`, from the M3 start to the horizon end |
+| Redeploy or reskill: backfill | recurring | `FTE × backfill_share × cost_per_fte_year_eur / 12` |
+| Redeploy or reskill: move | one-off | `redeploy_cost_eur` once per person per requirement |
+| Reskill: training | one-off | `reskill_cost_eur` in the first training month |
+| Reskill: pay rise | recurring | `FTE × reskill_uplift_eur_year / 12` |
+| Contractors | recurring | `FTE × contractor_day_rate_eur × 20` |
+| Hire: one-off | one-off | `headcount × hire_cost_eur` at the start month |
+| Hire: salary | recurring | `headcount × cost_per_fte_year_eur / 12`, from start to requirement end |
+| Change budget | one-off | `change_cost_eur` of the step, spread evenly over its months |
+| AI platform | recurring | `platform_cost_eur_month`, from the M2 start to the horizon end |
 
-- **Loaded monthly cost** = `salary band × salary_multiplier × loaded_cost_factor / 12`. Salary bands are mock config: A 52k, B 64k, C 78k, D 95k.
-- **Redeployed people's base salary is not new cost.** Only backfill and onboarding count. Hires count in full.
+- **Redeployed people are already paid.** Only backfill and the move are new cost. Hires count in full.
 - **Benefit (monthly).** `reviews_per_year / 12 × adoption × coverage × cost_per_review × ai_cost_saving_pct`.
   - `coverage = min(1, staffed FTE / required FTE)` in that month.
   - This is the only benefit driver. Freed capacity is reported as an aggregate FTE and is not valued a second time.
-- **Totals.** `ROI = (benefit − cost) / cost`. Payback is the first month with cumulative net ≥ 0, counted only from the first month that carries any cost. Payback is `None` if it does not occur. NPV uses the mock discount rate.
-- **Extended view.** An extrapolation to 60 months. It holds the final adoption, sets coverage to 100%, keeps platform run cost and adds no programme cost. It is labelled "not a forecast" in the response.
+- **Totals.** `ROI = (benefit − cost) / cost`. Payback is the first month with cumulative net ≥ 0, counted from the first month that carries any cost. It is `None` if that does not happen before the deadline.
+- **Run-rate net per year.** `(benefit − recurring cost in the last month) × 12`. It assumes December 2028 continues for a year. It is a simple summary and not a forecast.
+- **Not modelled:** salary bands, loaded-cost factors, discounting (NPV) and any extrapolation past the deadline. These were removed to keep the demo explainable.
 
 ### 2.6 Sensitivity
 - Each assumption has `low` (conservative), `base` and `high` (optimistic) values in `fixtures/assumptions.yaml`.
@@ -116,13 +116,14 @@ All rules are deterministic and covered by tests in `backend/tests/`.
 
 | # | Approved plan | Implemented | Reason |
 |---|---|---|---|
-| 1 | Overlapping milestone windows, with some finish-to-start dependencies | A strict chain of six consecutive milestones that fit in 24 months | Overlaps conflicted with finish-to-start, and six 6-month milestones cannot fit in 24 months |
+| 1 | Overlapping milestone windows, with some finish-to-start dependencies | A strict chain of four consecutive six-month milestones that fit in 24 months | Overlaps conflicted with finish-to-start. Four steps are easier to explain than six |
 | 2 | Hire productivity ramp reduces coverage | Ramp is a mentoring cost (`hire_mentoring_days`) and coverage is full from the start | Keeps the ledger simple and makes "hybrid never has more unmet FTE than hire-led" hold by construction. This is a labelled simplification |
-| 3 | `workforce.csv` | `workforce.csv`, now the only workforce file. Skills and training are JSON in one cell each (`skills_json`, `training_json`). The JSON version was removed. The loaded records are identical | Matches the approved plan. The nested fields are kept as JSON cells |
-| 4 | About 60 taxonomy skills | About 40 skills | Time. The taxonomy is extendable and the interface is ready for ESCO |
+| 3 | `workforce.csv` | `workforce.csv`, now the only workforce file. Skills are one JSON cell (`skills_json`). The JSON version was removed | Matches the approved plan. The nested skills field is kept as a JSON cell |
+| 4 | About 60 taxonomy skills | 9 skills at 3 levels | Simplicity for the demo. The taxonomy is extendable and the interface is ready for ESCO |
 | 5 | Evidence keyed by job family | Keyed by skill, family and country | Family is derived from the taxonomy. A job-family classifier is out of scope |
 | 6 | Update `spec.md` | `spec.md` was deleted in the working tree before this work, so it was **not** recreated. The spec is in `docs/PRODUCT_SPEC.md` | Avoids recreating a file you removed. Tell us if you want it back |
 | 7 | Narrative live by default | Live is opt-in | Keeps the shared quota safe. A smoke test made one unintended live call, which is logged in `usage.jsonl` |
+| 8 | 300 employees, 8 teams, 23 assumptions, salary bands, NPV, 60-month extension | About 60 employees, 5 teams, 12 assumptions, one yearly cost per person, no NPV or extension, one run-rate figure | The team could not explain the earlier model without economics background. Data was simplified; the structure (scenarios, ledger, planner) is unchanged |
 
 ## 6. Open items
 - The ETL and skill-mapper outputs (S1) are described in §7 once they land.

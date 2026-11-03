@@ -1,7 +1,7 @@
 {
-  "title": "MOCK GOAL: AI-assisted KYC/AML reviews",
+  "title": "MOCK GOAL: AI-assisted KYC reviews",
   "company_id": "KBC",
-  "statement": "MOCK: By 31 Dec 2028, at least 60% of periodic KYC/AML reviews and alert triage are AI-assisted, cost per review falls by 35%, and no forced redundancies occur.",
+  "statement": "MOCK: By 31 Dec 2028, 60% of KYC reviews are AI-assisted. Each AI-assisted review costs 35% less than today's EUR 48, and nobody is made redundant.",
   "baseline": {
     "reviews_per_year": 240000,
     "cost_per_review_eur": 48,
@@ -16,9 +16,8 @@
   "horizon_end": "2028-12",
   "constraints": [
     "No forced redundancies",
-    "Prioritise reskilling and redeployment",
-    "Model risk sign-off before scale-up",
-    "Workforce decisions require HR, legal and employee-representation review"
+    "Reskilling and redeployment before hiring",
+    "Model risk sign-off before scale-up"
   ],
   "is_mock": true
 }

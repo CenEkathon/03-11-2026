@@ -411,6 +411,11 @@ export interface components {
             /** Adoption Share Target */
             adoption_share_target: number;
             /**
+             * Change Cost Eur
+             * @default 0
+             */
+            change_cost_eur: number;
+            /**
              * Is Mock
              * @default true
              * @constant
@@ -622,8 +627,8 @@ export interface components {
             roi: number | null;
             /** Payback Month */
             payback_month: string | null;
-            /** Npv Eur */
-            npv_eur: number;
+            /** Run Rate Net Eur Year */
+            run_rate_net_eur_year: number;
             /** Unmet Fte Months */
             unmet_fte_months: number;
             /** Freed Capacity Fte Peak */
@@ -633,10 +638,6 @@ export interface components {
              * @default HR / legal / employee-representation review required
              */
             freed_capacity_flag: string;
-            /** Extended Payback Month */
-            extended_payback_month: string | null;
-            /** Extended Payback Note */
-            extended_payback_note: string;
         };
         /** Usage */
         Usage: {

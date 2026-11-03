@@ -116,13 +116,13 @@ def test_health_and_case(client):
     assert client.get("/api/health").json()["status"] == "ok"
     case = client.get("/api/case").json()
     assert case["goal"]["is_mock"] is True
-    assert len(case["milestones"]) == 6
+    assert len(case["milestones"]) == 4
 
 
 def test_compute_returns_422_for_invalid_roadmap(client):
     response = client.post(
         "/api/plan/compute",
-        json={"case": "base", "milestone_dates": {"M4": {"start": "2027-10", "end": "2028-02"}}},
+        json={"case": "base", "milestone_dates": {"M3": {"start": "2027-11", "end": "2028-05"}}},
     )
     assert response.status_code == 422
     assert response.json()["validation"]["ok"] is False
@@ -135,10 +135,10 @@ def test_compute_rejects_unknown_assumption(client):
 
 def test_editing_a_milestone_changes_totals_when_still_valid(client):
     base = client.post("/api/plan/compute", json={"case": "base"}).json()
-    # Shift M6 by one month later: must end in Dec 2028 at most, so shorten it instead.
+    # M4 must end by Dec 2028, so shorten it instead of moving it.
     edited = client.post(
         "/api/plan/compute",
-        json={"case": "base", "milestone_dates": {"M6": {"start": "2028-07", "end": "2028-11"}}},
+        json={"case": "base", "milestone_dates": {"M4": {"start": "2028-07", "end": "2028-11"}}},
     )
     assert edited.status_code == 200
     assert edited.json()["scenarios"]["hybrid"]["totals"]["benefit_eur"] != base["scenarios"]["hybrid"]["totals"]["benefit_eur"]
@@ -153,7 +153,7 @@ def test_evidence_endpoint_validates_skill_and_family(client):
 def test_workforce_summary_has_no_employee_ids(client):
     text = client.get("/api/workforce/summary").text
     assert not EMPLOYEE_ID.search(text)
-    assert client.get("/api/workforce/summary").json()["total_headcount"] == 300
+    assert client.get("/api/workforce/summary").json()["total_headcount"] == 60
 
 
 def test_team_roster_is_synthetic_and_has_no_availability_field(client):
@@ -171,7 +171,7 @@ def test_brief_reflects_roadmap_edits(client):
     base = client.post("/api/brief", json={"scenario": "hybrid"}).json()
     edited = client.post(
         "/api/brief",
-        json={"scenario": "hybrid", "milestone_dates": {"M6": {"start": "2028-07", "end": "2028-11"}}},
+        json={"scenario": "hybrid", "milestone_dates": {"M4": {"start": "2028-07", "end": "2028-11"}}},
     )
     assert edited.status_code == 200
     assert edited.json()["text"] != base["text"]
@@ -180,6 +180,6 @@ def test_brief_reflects_roadmap_edits(client):
 def test_brief_rejects_invalid_roadmap(client):
     response = client.post(
         "/api/brief",
-        json={"scenario": "hybrid", "milestone_dates": {"M4": {"start": "2027-10", "end": "2028-02"}}},
+        json={"scenario": "hybrid", "milestone_dates": {"M3": {"start": "2027-11", "end": "2028-05"}}},
     )
     assert response.status_code == 422

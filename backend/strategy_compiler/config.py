@@ -20,7 +20,6 @@ from .contracts import (
     CaseId,
     Company,
     Employee,
-    TrainingRecord,
     Goal,
     Milestone,
     Taxonomy,
@@ -30,15 +29,11 @@ from .contracts import (
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 
 WORKING_DAYS_PER_MONTH = 20
-RESKILL_MAX_GAP = 2  # proficiency levels a person may be trained up by
+RESKILL_MAX_GAP = 2  # levels a person may be trained up by (scale 1 to 3)
 ADJACENT_MIN_PROFICIENCY = 2  # same-family skill at this level counts as an adjacent skill
-EXTENDED_VIEW_MONTHS = 60  # payback view beyond the deadline (labelled extrapolation)
-PLATFORM_START_MILESTONE = "M3"  # platform run cost starts with the pilot
-HIRE_SALARY_BAND = "C"
+CONTRACTOR_MAX_SHARE = 0.30  # policy, not an assumption: contractors bridge at most 30% of a need
+PLATFORM_START_MILESTONE = "M2"  # platform run cost starts with the pilot
 EPS = 1e-9
-
-# MOCK salary bands, EUR per year. Not company data. Scaled by the salary_multiplier assumption.
-SALARY_BANDS_EUR: dict[str, float] = {"A": 52_000.0, "B": 64_000.0, "C": 78_000.0, "D": 95_000.0}
 
 SCENARIO_META: dict[str, dict[str, Any]] = {
     "reskill_led": {
@@ -64,7 +59,7 @@ LABELS: dict[str, str] = {
     "workforce": "SYNTHETIC WORKFORCE: fictional employees, no real people",
     "assumptions": "MOCK ASSUMPTIONS: illustrative, editable, not company figures",
     "vacancy_evidence": "EXTERNAL OBSERVATION: 2021 finance and insurance vacancies (EN/NL/FR), deduplicated",
-    "estimates": "ESTIMATE: costs and benefits are modelled from mock assumptions",
+    "estimates": "ESTIMATE: costs and benefits come from 12 mock assumptions",
 }
 
 
@@ -108,12 +103,9 @@ def parse_workforce_csv(text: str) -> tuple[Employee, ...]:
                 employee_id=row["employee_id"],
                 team_id=row["team_id"],
                 role=row["role"],
-                grade=row["grade"],
                 fte=float(row["fte"]),
                 availability=float(row["availability"]),
-                cost_band=row["cost_band"],
                 skills={k: int(v) for k, v in json.loads(row["skills_json"]).items()},
-                training_history=[TrainingRecord.model_validate(t) for t in json.loads(row["training_json"])],
                 is_mock=_parse_bool(row["is_mock"]),
             )
         )

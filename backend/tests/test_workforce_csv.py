@@ -4,14 +4,15 @@ import pytest
 
 from strategy_compiler.config import FIXTURES_DIR, load_employees, parse_workforce_csv
 
-HEADER = "employee_id,team_id,role,grade,fte,availability,cost_band,is_mock,skills_json,training_json\n"
+HEADER = "employee_id,team_id,role,fte,availability,is_mock,skills_json\n"
 
 
-def test_committed_csv_has_300_synthetic_employees_with_no_extra_attributes():
+def test_committed_csv_has_about_60_synthetic_employees_with_no_extra_attributes():
     employees = load_employees()
-    assert len(employees) == 300
+    assert len(employees) == 60
     assert all(e.is_mock for e in employees)
-    assert len({e.employee_id for e in employees}) == 300
+    assert len({e.employee_id for e in employees}) == 60
+    assert all(lvl in (1, 2, 3) for e in employees for lvl in e.skills.values())
 
 
 def test_committed_csv_header_has_no_name_or_sensitive_columns():
@@ -20,26 +21,21 @@ def test_committed_csv_header_has_no_name_or_sensitive_columns():
     assert forbidden.isdisjoint(c.strip() for c in header.split(","))
 
 
-def test_parses_json_cells_into_skills_and_training():
-    row = (
-        'EMP-9001,AML-OPS,KYC analyst,G5,0.8,0.4,B,true,'
-        '"{""kyc"": 4, ""python"": 2}",'
-        '"[{""course_id"": ""CRS-PY-01"", ""course_label"": ""Python"", ""completed"": ""2025-03"", ""days"": 3.0}]"\n'
-    )
+def test_parses_json_cell_into_skills():
+    row = 'EMP-9001,AML-OPS,KYC analyst,0.8,0.4,true,"{""kyc"": 3, ""python"": 2}"\n'
     (employee,) = parse_workforce_csv(HEADER + row)
-    assert employee.skills == {"kyc": 4, "python": 2}
+    assert employee.skills == {"kyc": 3, "python": 2}
     assert employee.fte == 0.8
     assert employee.availability == 0.4
-    assert employee.training_history[0].course_id == "CRS-PY-01"
 
 
 def test_rejects_is_mock_other_than_true_or_false():
-    row = 'EMP-9002,AML-OPS,KYC analyst,G5,1,0.4,B,yes,"{}",[]\n'
+    row = 'EMP-9002,AML-OPS,KYC analyst,1,0.4,yes,"{}"\n'
     with pytest.raises(ValueError, match="is_mock"):
         parse_workforce_csv(HEADER + row)
 
 
 def test_rejects_out_of_range_availability():
-    row = 'EMP-9003,AML-OPS,KYC analyst,G5,1,1.4,B,true,"{}",[]\n'
+    row = 'EMP-9003,AML-OPS,KYC analyst,1,1.4,true,"{}"\n'
     with pytest.raises(ValueError):
         parse_workforce_csv(HEADER + row)

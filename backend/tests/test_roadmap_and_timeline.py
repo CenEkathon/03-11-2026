@@ -25,15 +25,16 @@ def test_default_roadmap_is_valid_and_fits_horizon():
 
 def test_finish_to_start_violation_is_reported():
     goal = load_goal()
-    moved = apply_dates(load_milestones(), {"M4": MilestoneDates(start="2027-10", end="2028-02")})
+    # M3 would start before M2 (which ends 2027-12) has finished
+    moved = apply_dates(load_milestones(), {"M3": MilestoneDates(start="2027-11", end="2028-05")})
     result = validate_roadmap(moved, goal.horizon_start, goal.horizon_end)
     assert not result.ok
-    assert any("M4" in e and "finish-to-start" in e for e in result.errors)
+    assert any("M3" in e and "finish-to-start" in e for e in result.errors)
 
 
 def test_milestone_outside_horizon_is_reported():
     goal = load_goal()
-    moved = apply_dates(load_milestones(), {"M6": MilestoneDates(start="2028-07", end="2029-02")})
+    moved = apply_dates(load_milestones(), {"M4": MilestoneDates(start="2028-07", end="2029-02")})
     result = validate_roadmap(moved, goal.horizon_start, goal.horizon_end)
     assert not result.ok
     assert any("outside the horizon" in e for e in result.errors)
@@ -42,7 +43,7 @@ def test_milestone_outside_horizon_is_reported():
 def test_dependency_cycle_is_detected():
     goal = load_goal()
     ms = [m.model_copy() for m in load_milestones()]
-    ms[0] = ms[0].model_copy(update={"depends_on": ["M6"]})
+    ms[0] = ms[0].model_copy(update={"depends_on": ["M4"]})
     result = validate_roadmap(ms, goal.horizon_start, goal.horizon_end)
     assert not result.ok
     assert any("cycle" in e or "finish-to-start" in e for e in result.errors)
@@ -59,14 +60,13 @@ def test_adoption_ramp_matches_hand_computed_values():
     goal = load_goal()
     horizon = month_range(goal.horizon_start, goal.horizon_end)
     adoption = adoption_by_month(load_milestones(), horizon)
-    # M3 pilot: linear ramp 0 -> 0.15 across Jul-Oct 2027
-    assert adoption["2027-07"] == pytest.approx(0.0375)
-    assert adoption["2027-10"] == pytest.approx(0.15)
-    # M4 holds 0.15
-    assert adoption["2028-01"] == pytest.approx(0.15)
-    # M5 ramp 0.15 -> 0.40 across Mar-Jun 2028
-    assert adoption["2028-03"] == pytest.approx(0.2125)
-    assert adoption["2028-06"] == pytest.approx(0.40)
-    # M6 ramp 0.40 -> 0.60 across Jul-Dec 2028
-    assert adoption["2028-12"] == pytest.approx(0.60)
+    # M1 has no AI use yet
     assert adoption["2027-01"] == pytest.approx(0.0)
+    # M2 pilot: straight line 0 -> 0.15 across Jul-Dec 2027
+    assert adoption["2027-07"] == pytest.approx(0.025)
+    assert adoption["2027-12"] == pytest.approx(0.15)
+    # M3: straight line 0.15 -> 0.40 across Jan-Jun 2028
+    assert adoption["2028-01"] == pytest.approx(0.15 + 0.25 / 6)
+    assert adoption["2028-06"] == pytest.approx(0.40)
+    # M4: straight line 0.40 -> 0.60 across Jul-Dec 2028
+    assert adoption["2028-12"] == pytest.approx(0.60)

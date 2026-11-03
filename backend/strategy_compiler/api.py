@@ -159,7 +159,7 @@ def workforce_team(team_id: str) -> dict[str, Any]:
     return {
         "team_id": team_id,
         "members": [
-            {"employee_id": e.employee_id, "role": e.role, "grade": e.grade, "skills": e.skills}
+            {"employee_id": e.employee_id, "role": e.role, "skills": e.skills}
             for e in members
         ],
         "labels": {"workforce": LABELS["workforce"]},

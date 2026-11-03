@@ -20,63 +20,32 @@
     "LU": 4575,
     "NL": 20872
   },
-  "postings_with_mapped_skill": 51035,
-  "mapping_coverage": 0.5707,
+  "postings_with_mapped_skill": 13991,
+  "mapping_coverage": 0.1565,
   "mapping_threshold": 0.6,
   "mapped_matches_by_method": {
-    "alias_description": 80128,
-    "alias_title": 13742
+    "alias_description": 16159,
+    "alias_title": 2148
   },
   "sub_threshold_matches_by_method": {
-    "generic_description": 61714,
-    "generic_title": 3354
+    "generic_description": 17590,
+    "generic_title": 1460
   },
   "skill_postings_deduped": {
     "kyc": 3135,
     "aml_monitoring": 2923,
-    "sanctions_screening": 80,
-    "suspicious_activity_reporting": 227,
-    "fraud_prevention": 515,
-    "financial_investigation": 3,
-    "data_engineering": 2562,
-    "sql": 6760,
-    "python": 4725,
+    "data_engineering": 1543,
     "data_quality": 1588,
-    "data_governance": 2565,
-    "data_analysis": 3215,
-    "cloud_data_platforms": 5587,
-    "machine_learning": 1438,
-    "artificial_intelligence": 372,
-    "nlp": 235,
-    "generative_ai": 35,
-    "mlops": 58,
-    "statistical_modelling": 176,
-    "model_validation": 303,
-    "model_risk_management": 334,
-    "explainable_ai": 8,
-    "ai_act_gdpr_compliance": 2053,
-    "regulatory_compliance": 4371,
+    "python": 4725,
+    "machine_learning": 1437,
+    "model_validation": 300,
     "ai_governance": 1,
-    "risk_assessment": 1087,
-    "internal_audit": 1431,
-    "credit_risk": 2285,
-    "product_ownership": 3762,
-    "agile_delivery": 4702,
-    "change_management": 3076,
-    "process_redesign": 1850,
-    "stakeholder_management": 4816,
-    "solution_architecture": 870,
-    "devops": 5564,
-    "cyber_security": 2544,
-    "identity_access_management": 527,
-    "case_quality_assurance": 2470,
-    "document_review": 47,
-    "customer_operations": 15570
+    "change_management": 2655
   },
   "skills_with_zero_matches": [],
   "evidence_cells": {
-    "all": 1436,
-    "committed": 1246
+    "all": 340,
+    "committed": 306
   },
   "min_cell_postings_committed": 3,
   "data_caveats": [

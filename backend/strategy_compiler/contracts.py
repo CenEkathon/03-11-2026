@@ -16,7 +16,6 @@ Source = Literal["observed", "inferred", "assumed"]
 CaseId = Literal["low", "base", "high"]
 ScenarioId = Literal["reskill_led", "hire_led", "hybrid"]
 ActionType = Literal["redeploy", "reskill", "external", "hire"]
-CostBand = Literal["A", "B", "C", "D"]
 MappingMethod = Literal[
     "alias_title", "alias_description", "generic_title", "generic_description", "unmapped"
 ]
@@ -117,6 +116,7 @@ class Milestone(BaseModel):
     owner_team: str
     metric: Metric
     adoption_share_target: float  # AI-assisted share reached at the end of the milestone
+    change_cost_eur: float = Field(default=0.0, ge=0)  # mock one-off change budget, spread over the milestone
     is_mock: Literal[True] = True
 
 
@@ -145,7 +145,7 @@ class Requirement(BaseModel):
     milestone_id: str
     role: str
     skill_id: str
-    min_proficiency: int = Field(ge=1, le=5)
+    min_proficiency: int = Field(ge=1, le=3)  # 1 basic, 2 working, 3 expert
     fte: float = Field(gt=0)
     start: str
     end: str
@@ -155,25 +155,15 @@ class Requirement(BaseModel):
 
 
 # ---------------------------------------------------------------- synthetic workforce
-class TrainingRecord(BaseModel):
-    course_id: str
-    course_label: str
-    completed: str  # YYYY-MM
-    days: float
-
-
 class Employee(BaseModel):
     """Synthetic. No names, no sensitive attributes. Matching uses skills, proficiency, availability only."""
 
     employee_id: str
     team_id: str
     role: str
-    grade: str
     fte: float
     availability: float = Field(ge=0, le=1)  # share of FTE available for programme work
-    skills: dict[str, int]  # skill_id -> proficiency 1..5
-    training_history: list[TrainingRecord] = Field(default_factory=list)
-    cost_band: CostBand
+    skills: dict[str, int]  # skill_id -> level 1 basic, 2 working, 3 expert
     is_mock: Literal[True] = True
 
 
@@ -255,12 +245,10 @@ class Totals(BaseModel):
     net_eur: float
     roi: float | None  # (benefit - cost) / cost; None if cost is 0
     payback_month: str | None  # first month cumulative net >= 0 within the deadline horizon
-    npv_eur: float
+    run_rate_net_eur_year: float  # last month's benefit minus recurring cost, x 12. Simple, not a forecast
     unmet_fte_months: float
     freed_capacity_fte_peak: float
     freed_capacity_flag: str = REVIEW_FLAG
-    extended_payback_month: str | None  # extrapolated beyond horizon, labelled
-    extended_payback_note: str
 
 
 class ScenarioResult(BaseModel):

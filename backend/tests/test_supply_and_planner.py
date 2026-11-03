@@ -47,8 +47,8 @@ def test_adjacent_skill_requires_same_family_at_level_two():
 
 def test_ledger_rejects_overbooking_and_never_goes_negative():
     emp = Employee(
-        employee_id="EMP-T1", team_id="DS-AI", role="x", grade="G5", fte=1.0, availability=0.5,
-        skills={}, training_history=[], cost_band="B",
+        employee_id="EMP-T1", team_id="DS-AI", role="x", fte=1.0, availability=0.5,
+        skills={},
     )
     ledger = Ledger([emp], ["2027-01"], {"DS-AI"})
     assert ledger.remaining("EMP-T1", "2027-01") == pytest.approx(0.5)
@@ -59,10 +59,12 @@ def test_ledger_rejects_overbooking_and_never_goes_negative():
 
 
 def test_non_contributing_team_has_no_programme_capacity():
+    # Every team in the demo is contributing. The rule is still enforced if a team is switched off.
     reqs, employees, contributing, families, a, horizon = _context()
-    ledger = Ledger(employees, horizon, contributing)
-    risk = next(e for e in employees if e.team_id == "RISK")
-    assert ledger.base_capacity(risk.employee_id) == 0.0
+    ledger = Ledger(employees, horizon, set())
+    member = employees[0]
+    assert ledger.base_capacity(member.employee_id) == 0.0
+    assert ledger.remaining(member.employee_id, horizon[0]) == 0.0
 
 
 @pytest.mark.parametrize("scenario", SCENARIOS)

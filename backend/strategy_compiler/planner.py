@@ -2,11 +2,11 @@
 
 Sources:
 - redeploy : people already at or above the required proficiency, in contributing teams.
-- reskill  : people 1 or 2 proficiency levels short with an adjacent same-family skill. Training is
-             scheduled in the months before the requirement starts and consumes their programme capacity.
+- reskill  : people 1 or 2 levels short with an adjacent same-family skill. Training (a fixed number of
+             months) is scheduled before the requirement starts and consumes their programme capacity.
              If there is not enough lead time, the candidate is skipped and the requirement is flagged.
-- external : a contractor bridge, capped at contractor_max_share of the requirement's FTE.
-- hire     : hires start at max(requirement start, programme start + time_to_hire). Headcount is the
+- external : a contractor bridge, capped at CONTRACTOR_MAX_SHARE (30%) of the requirement's FTE.
+- hire     : hires start at max(requirement start, programme start + hire lead time). Headcount is the
              largest remaining need in the hire months, and coverage is full from the start month.
 
 The planner only produces events (allocations, trainings, hires, unmet months). Costs are computed in
@@ -15,10 +15,9 @@ finance.py. The planner does no pricing.
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass, field
 
-from .config import EPS, RESKILL_MAX_GAP, SCENARIO_META, WORKING_DAYS_PER_MONTH
+from .config import CONTRACTOR_MAX_SHARE, EPS, RESKILL_MAX_GAP, SCENARIO_META
 from .contracts import Employee, Requirement, ScenarioId
 from .demand import has_adjacent_skill
 from .supply import Ledger
@@ -33,7 +32,6 @@ class Allocation:
     source: str  # redeploy | reskill | external | hire
     employee_id: str | None
     fte: float
-    band: str | None
 
 
 @dataclass
@@ -42,9 +40,7 @@ class TrainingEvent:
     requirement_id: str
     employee_id: str
     skill_id: str
-    gap: int
-    training_days: float
-    months: list[str]
+    months: list[str]  # training months, all before the requirement starts
 
 
 @dataclass
@@ -88,12 +84,11 @@ class _Planner:
     ) -> None:
         self.scenario = scenario
         self.policy: tuple[str, ...] = SCENARIO_META[scenario]["policy"]
-        self.employees = {e.employee_id: e for e in employees}
         self.contributing = [e for e in employees if e.team_id in contributing_teams]
         self.families = families
         self.a = a
         self.horizon_start = parse_month(horizon[0])
-        self.hire_available = self.horizon_start + int(a["time_to_hire_months"])
+        self.hire_available = self.horizon_start + int(a["hire_lead_time_months"])
         self.ledger = Ledger(employees, horizon, contributing_teams)
         self.eff: dict[str, dict[str, int]] = {e.employee_id: dict(e.skills) for e in employees}
         self.trained: set[tuple[str, str]] = set()
@@ -101,10 +96,7 @@ class _Planner:
 
     # ------------------------------------------------------------ helpers
     def _alloc(self, req_id: str, month: str, source: str, employee_id: str | None, fte: float) -> None:
-        band = self.employees[employee_id].cost_band if employee_id else None
-        self.raw.allocations.append(
-            Allocation(self.scenario, req_id, month, source, employee_id, fte, band)
-        )
+        self.raw.allocations.append(Allocation(self.scenario, req_id, month, source, employee_id, fte))
 
     # ------------------------------------------------------------ sources
     def _redeploy(self, r: Requirement, months: list[str], covered: dict[str, float]) -> None:
@@ -138,7 +130,7 @@ class _Planner:
                 continue
             pool.append((gap, e.employee_id))
         pool.sort()
-        days_per_level = self.a["training_days_per_level"]
+        t_months_needed = int(self.a["reskill_training_months"])
         req_start = parse_month(r.start)
         for m in months:
             need = r.fte - covered[m]
@@ -149,9 +141,7 @@ class _Planner:
                     break
                 key = (eid, r.id)
                 if key not in self.trained:
-                    days = gap * days_per_level
-                    t_months = math.ceil(days / WORKING_DAYS_PER_MONTH)
-                    train = [format_month(req_start - k) for k in range(t_months, 0, -1)]
+                    train = [format_month(req_start - k) for k in range(t_months_needed, 0, -1)]
                     if any(parse_month(tm) < self.horizon_start for tm in train):
                         lead_blocked = True
                         continue
@@ -161,9 +151,7 @@ class _Planner:
                         self.ledger.consume_all(eid, tm)
                     self.eff[eid][r.skill_id] = max(self.eff[eid].get(r.skill_id, 0), r.min_proficiency)
                     self.trained.add(key)
-                    self.raw.trainings.append(
-                        TrainingEvent(self.scenario, r.id, eid, r.skill_id, gap, days, train)
-                    )
+                    self.raw.trainings.append(TrainingEvent(self.scenario, r.id, eid, r.skill_id, train))
                 rem = self.ledger.remaining(eid, m)
                 if rem <= EPS:
                     continue
@@ -175,7 +163,7 @@ class _Planner:
         return lead_blocked
 
     def _external(self, r: Requirement, months: list[str], covered: dict[str, float]) -> None:
-        cap = self.a["contractor_max_share"] * r.fte
+        cap = CONTRACTOR_MAX_SHARE * r.fte
         for m in months:
             take = min(r.fte - covered[m], cap)
             if take > EPS:

@@ -94,7 +94,7 @@ def test_intermediary_flagged_not_dropped(toy_run):
 def test_generic_only_match_is_not_evidence(toy_run):
     report, evidence, _, _ = toy_run
     assert report["sub_threshold_matches_by_method"].get("generic_description", 0) >= 1
-    assert all(r["skill_id"] != "regulatory_compliance" for r in evidence["rows"])
+    assert all(r["skill_id"] != "ai_governance" for r in evidence["rows"]), "generic 'compliance' must not become evidence"
 
 
 def test_evidence_cell_shares_use_deduped_dated_denominator(toy_run):

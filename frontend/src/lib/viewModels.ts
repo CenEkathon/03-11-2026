@@ -14,7 +14,7 @@ import type {
   ScenarioResult,
   SensitivityRow,
 } from "../api/types";
-import { formatMonth } from "./format";
+import { formatEur, formatMonth } from "./format";
 
 // ---------------------------------------------------------------- AI adoption
 export interface AdoptionPoint {
@@ -179,9 +179,7 @@ export function attentionItems(plan: PlanResponse, scenarioId: ScenarioId): Atte
       id: "payback",
       tone: "warning",
       title: "No payback before the deadline",
-      detail: t.extended_payback_month
-        ? `${formatMonth(t.extended_payback_month)} if benefit continues past the deadline. Not a forecast. The Money page has the full note.`
-        : "Cumulative net stays negative in the modelled horizon.",
+      detail: `Cumulative net stays negative to the deadline. At the Dec 2028 run rate the option nets about ${formatEur(t.run_rate_net_eur_year)} a year (estimate, not a forecast).`,
     });
   }
 

@@ -43,18 +43,8 @@ export function Finance({ shared }: { shared: Shared }) {
     { key: "b", header: "Benefit to deadline", numeric: true, render: (r) => formatEur(r.t.benefit_eur) },
     { key: "n", header: "Net to deadline", numeric: true, render: (r) => formatEur(r.t.net_eur) },
     { key: "r", header: "ROI", numeric: true, render: (r) => formatPct(r.t.roi) },
-    { key: "np", header: "NPV", numeric: true, render: (r) => formatEur(r.t.npv_eur) },
-    { key: "p", header: "Payback", render: (r) => (r.t.payback_month ? formatMonth(r.t.payback_month) : "After deadline") },
-    {
-      key: "e",
-      header: "Extrapolated payback",
-      render: (r) => (
-        <span>
-          {r.t.extended_payback_month ? formatMonth(r.t.extended_payback_month) : "Beyond 60 months"}{" "}
-          <span className="tag">Extrapolated</span>
-        </span>
-      ),
-    },
+    { key: "p", header: "Payback by deadline", render: (r) => (r.t.payback_month ? formatMonth(r.t.payback_month) : "Not by deadline") },
+    { key: "rr", header: "Yearly net at Dec 2028 run rate (estimate)", numeric: true, render: (r) => formatEur(r.t.run_rate_net_eur_year) },
   ];
 
   const sensColumns: Column<SensitivityRow>[] = [
@@ -101,18 +91,24 @@ export function Finance({ shared }: { shared: Shared }) {
       <KpiRow>
         <Kpi label="Cost to deadline" value={formatEur(t.cost_total_eur)} sub={`Recurring ${formatEur(t.cost_recurring_eur)}`} />
         <Kpi label="Benefit to deadline" value={formatEur(t.benefit_eur)} />
-        <Kpi label="Net to deadline" value={formatEur(t.net_eur)} tone={t.net_eur < 0 ? "bad" : "good"} sub={`NPV ${formatEur(t.npv_eur)}`} />
+        <Kpi label="Net to deadline" value={formatEur(t.net_eur)} tone={t.net_eur < 0 ? "bad" : "good"} />
         <Kpi label="ROI to deadline" value={formatPct(t.roi)} tone={t.roi !== null && t.roi < 0 ? "bad" : "good"} />
         <Kpi
           label="Payback"
           value={t.payback_month ? formatMonth(t.payback_month) : "Not by deadline"}
-          sub={t.extended_payback_month ? `Extrapolated ${formatMonth(t.extended_payback_month)}` : undefined}
+        />
+        <Kpi
+          label="Yearly net at Dec 2028 run rate"
+          value={formatEur(t.run_rate_net_eur_year)}
+          tone={t.run_rate_net_eur_year < 0 ? "bad" : "good"}
+          sub="Estimate, not a forecast"
         />
       </KpiRow>
 
       {t.payback_month === null ? (
         <Callout tone="warning" title={`${SCENARIO_SHORT_LABEL[scenario]} does not pay back before the deadline`}>
-          {t.extended_payback_note}
+          Costs are still above benefits at the deadline. The yearly run-rate figure shows what the option would net per year once the
+          December 2028 level continues. It is a simple estimate, not a forecast.
         </Callout>
       ) : null}
 
@@ -186,24 +182,27 @@ export function Finance({ shared }: { shared: Shared }) {
             share follows the roadmap milestones. This is the only benefit driver.
           </li>
           <li>
-            <strong>Redeploy</strong>: no new salary. Only backfill of the work the person leaves behind.
+            <strong>Redeploy</strong>: a one-off move cost per person. Their salary is already paid. Each month, the work they leave
+            behind is covered at backfill share × yearly cost ÷ 12.
           </li>
           <li>
-            <strong>Reskill</strong>: training (days × day rate) and backfill during training, then a salary uplift and backfill.
+            <strong>Reskill</strong>: a one-off training cost per person plus the move cost. Then the same monthly backfill as redeploy,
+            plus a yearly pay rise ÷ 12.
           </li>
           <li>
-            <strong>Hire</strong>: recruitment fee, onboarding and mentor time once, then the full salary from the start month.
+            <strong>Hire</strong>: a one-off hire cost per person (recruitment, onboarding and ramp-up). Then the full yearly cost ÷ 12
+            every month from the start month to the end of the need.
           </li>
           <li>
-            <strong>Contractor bridge</strong>: FTE × day rate × working days, capped at a share of each requirement.
+            <strong>Contractor bridge</strong>: day rate × 20 working days per FTE per month. Capped at 30% of each need.
           </li>
           <li>
             <strong>Technology, change and platform run</strong>: one-off cost spread over each milestone, and a monthly run cost from the pilot.
             Programme costs stop at the deadline.
           </li>
           <li>
-            <strong>Net</strong> = benefit − cost, per month and cumulative. <strong>NPV</strong> discounts the monthly net at the mock
-            discount rate. <strong>ROI</strong> = (benefit − cost) ÷ cost.
+            <strong>Net</strong> = benefit − cost, per month and cumulative. <strong>ROI</strong> = (benefit − cost) ÷ cost.
+            <strong> Yearly net at run rate</strong> = (benefit − recurring cost in Dec 2028) × 12. An estimate, not a forecast.
           </li>
           <li>
             <strong>Freed capacity</strong> is reported only as an aggregate FTE with an HR, legal and employee-representation review flag.
