@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from .config import LABELS
-from .contracts import BriefResponse, PlanResponse, ScenarioId, Usage
+from .contracts import REVIEW_FLAG, BriefResponse, Lang, PlanResponse, ScenarioId, Usage
 
 NARRATIVE_MODEL = "claude-sonnet-5-5"
 CACHE_DIR = Path(__file__).resolve().parents[1] / ".cache" / "narrative"
@@ -32,9 +32,34 @@ SYSTEM_PROMPT = (
     "Write at most 220 words in plain English, with 3 short bullet points and one decision request."
 )
 
+SYSTEM_PROMPT_NL = (
+    "Je schrijft een korte executive brief voor een CEO, in het Nederlands. Alles is MOCK: de bank is fictief, "
+    "het doel, de roadmap, de workforce en de cijfers zijn demo-invoer, en de kosten zijn schattingen. "
+    "Gebruik alleen de getallen in de JSON die je krijgt. Reken niet na, rond niet anders af en verzin geen cijfers. "
+    "Vermeld dat de cijfers mock-schattingen zijn. Beveel nooit aan om een individu te ontslaan of te rangschikken. "
+    "Overtollige capaciteit is alleen een geaggregeerde FTE en moet naar HR, juridische zaken en de ondernemingsraad. "
+    "Schrijf maximaal 220 woorden, met 3 korte opsommingstekens en één beslissingsvraag."
+)
+
+REVIEW_FLAG_NL = "Review door HR, juridische zaken en de ondernemingsraad vereist"
+SCENARIO_LABEL_NL = {
+    "reskill_led": "Herscholing eerst",
+    "hire_led": "Aanwerving eerst",
+    "hybrid": "Hybride (aanbevolen)",
+}
+CASE_NL = {"low": "laag", "base": "basis", "high": "hoog"}
+
 
 def _eur(value: float) -> str:
     return f"EUR {value:,.0f}"
+
+
+def _eur_nl(value: float) -> str:
+    return "EUR " + f"{value:,.0f}".replace(",", ".")
+
+
+def _num_nl(value: float, digits: int) -> str:
+    return f"{value:.{digits}f}".replace(".", ",")
 
 
 def build_facts(plan: PlanResponse, scenario: ScenarioId) -> dict[str, Any]:
@@ -102,6 +127,26 @@ def _template(facts: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _template_nl(facts: dict[str, Any]) -> str:
+    t = facts["totals"]
+    scen = SCENARIO_LABEL_NL[facts["scenario"]["id"]]
+    payback = t["payback_month_within_deadline"] or "niet binnen de deadline"
+    lines = [
+        f"MOCK-BRIEF - {scen} (case: {CASE_NL[facts['case']]}). Alle bedragen zijn mock-schattingen voor een fictieve bank.",
+        "",
+        f"- Programmakosten tot de deadline: {_eur_nl(t['cost_total_eur'])} "
+        f"(eenmalig {_eur_nl(t['cost_one_off_eur'])}, terugkerend {_eur_nl(t['cost_recurring_eur'])}).",
+        f"- Baten tot de deadline: {_eur_nl(t['benefit_eur'])}; netto {_eur_nl(t['net_eur'])}; "
+        f"terugverdientijd {payback}.",
+        f"- Onbezette FTE-maanden: {_num_nl(t['unmet_fte_months'], 2)}. Vrijgekomen capaciteit piekt op "
+        f"{_num_nl(t['freed_capacity_fte_peak_aggregate'], 1)} FTE in totaal. {REVIEW_FLAG_NL}.",
+        "",
+        "Gevraagde beslissing: keur de roadmap goed als voorstel, en laat de HR-, juridische en ondernemingsraad-review "
+        "uitvoeren voordat er wijzigingen in de workforce komen.",
+    ]
+    return "\n".join(lines)
+
+
 def _price_eur(tokens_in: int, tokens_out: int) -> float:
     price_in = float(os.environ.get("LLM_PRICE_EUR_PER_MTOK_IN", "0") or 0)
     price_out = float(os.environ.get("LLM_PRICE_EUR_PER_MTOK_OUT", "0") or 0)
@@ -130,9 +175,9 @@ def usage_summary() -> dict[str, Any]:
     }
 
 
-def build_brief(plan: PlanResponse, scenario: ScenarioId) -> BriefResponse:
+def build_brief(plan: PlanResponse, scenario: ScenarioId, lang: Lang = "en") -> BriefResponse:
     facts = build_facts(plan, scenario)
-    key = hashlib.sha256((NARRATIVE_MODEL + json.dumps(facts, sort_keys=True)).encode("utf-8")).hexdigest()
+    key = hashlib.sha256((NARRATIVE_MODEL + lang + json.dumps(facts, sort_keys=True)).encode("utf-8")).hexdigest()
     cache_file = CACHE_DIR / f"{key}.json"
     if cache_file.exists():
         cached = json.loads(cache_file.read_text(encoding="utf-8"))
@@ -141,9 +186,8 @@ def build_brief(plan: PlanResponse, scenario: ScenarioId) -> BriefResponse:
     # Live calls are opt-in so that demo runs and tests never spend the shared quota by accident.
     live = os.environ.get("STRATEGY_COMPILER_LLM") == "live" and bool(os.environ.get("ANTHROPIC_API_KEY"))
     if not live:
-        return BriefResponse(
-            scenario=scenario, text=_template(facts), drafted_by="template", cached=False, labels=LABELS
-        )
+        text = _template_nl(facts) if lang == "nl" else _template(facts)
+        return BriefResponse(scenario=scenario, text=text, drafted_by="template", cached=False, labels=LABELS)
 
     import anthropic  # imported lazily so the app runs without the SDK call path
 
@@ -152,7 +196,7 @@ def build_brief(plan: PlanResponse, scenario: ScenarioId) -> BriefResponse:
     msg = client.messages.create(
         model=NARRATIVE_MODEL,
         max_tokens=1200,
-        system=SYSTEM_PROMPT,
+        system=SYSTEM_PROMPT_NL if lang == "nl" else SYSTEM_PROMPT,
         messages=[{"role": "user", "content": json.dumps(facts, ensure_ascii=False)}],
     )
     text = "".join(block.text for block in msg.content if block.type == "text")

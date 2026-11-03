@@ -3,6 +3,8 @@ import { Callout, Card, DataTable, PageHeader, type Column } from "../components
 import type { Controls, Shared } from "../appTypes";
 import type { AssumptionRow } from "../api/types";
 import { formatByUnit } from "../lib/format";
+import { t } from "../i18n/i18n";
+import { useLang } from "../i18n/LanguageProvider";
 
 const CONFIDENCE_TEXT: Record<AssumptionRow["confidence"], string> = {
   low: "Low confidence",
@@ -11,6 +13,7 @@ const CONFIDENCE_TEXT: Record<AssumptionRow["confidence"], string> = {
 };
 
 export function Assumptions({ shared, controls }: { shared: Shared; controls: Controls }) {
+  useLang();
   const { assumptions } = shared;
   const [drafts, setDrafts] = useState<Record<string, string>>(() =>
     Object.fromEntries(Object.entries(controls.overrides).map(([k, v]) => [k, String(v)])),
@@ -44,34 +47,34 @@ export function Assumptions({ shared, controls }: { shared: Shared; controls: Co
   const columns: Column<AssumptionRow>[] = [
     {
       key: "label",
-      header: "Assumption",
+      header: t("Assumption"),
       render: (a) => (
         <>
-          <div className="cell-title">{a.label}</div>
-          <div className="muted small">{a.rationale}</div>
+          <div className="cell-title">{t(a.label)}</div>
+          <div className="muted small">{t(a.rationale)}</div>
           <code className="small">{a.key}</code>
         </>
       ),
     },
-    { key: "low", header: "Low", numeric: true, render: (a) => formatByUnit(a.low, a.unit) },
-    { key: "base", header: "Base", numeric: true, render: (a) => <strong>{formatByUnit(a.base, a.unit)}</strong> },
-    { key: "high", header: "High", numeric: true, render: (a) => formatByUnit(a.high, a.unit) },
-    { key: "conf", header: "Confidence", render: (a) => CONFIDENCE_TEXT[a.confidence] },
+    { key: "low", header: t("Low"), numeric: true, render: (a) => formatByUnit(a.low, a.unit) },
+    { key: "base", header: t("Base"), numeric: true, render: (a) => <strong>{formatByUnit(a.base, a.unit)}</strong> },
+    { key: "high", header: t("High"), numeric: true, render: (a) => formatByUnit(a.high, a.unit) },
+    { key: "conf", header: t("Confidence"), render: (a) => t(CONFIDENCE_TEXT[a.confidence]) },
     {
       key: "override",
-      header: "Your base value",
+      header: t("Your base value"),
       render: (a) => (
         <div className="override">
           <input
             type="number"
             step="any"
             inputMode="decimal"
-            aria-label={`Your base value for ${a.label} (${a.unit})`}
+            aria-label={t("Your base value for {label} ({unit})", { label: t(a.label), unit: t(a.unit) })}
             value={drafts[a.key] ?? ""}
             placeholder={String(a.base)}
             onChange={(e) => setDrafts((prev) => ({ ...prev, [a.key]: e.target.value }))}
           />
-          <span className="muted small">{a.unit === "share" ? "decimal, 0.35 = 35%" : a.unit}</span>
+          <span className="muted small">{a.unit === "share" ? t("decimal, 0.35 = 35%") : t(a.unit)}</span>
         </div>
       ),
     },
@@ -80,32 +83,37 @@ export function Assumptions({ shared, controls }: { shared: Shared; controls: Co
   return (
     <>
       <PageHeader
-        title="Assumptions"
-        lead="The inputs behind every cost and benefit. Change a base value and the whole demo recalculates. Changes are not saved on the server."
+        title={t("Assumptions")}
+        lead={t("The inputs behind every cost and benefit. Change a base value and the whole demo recalculates. Changes are not saved on the server.")}
       />
 
-      <Callout tone="info" title="How to read this table">
-        <strong>Low</strong> is the conservative case: higher costs, lower benefit. <strong>High</strong> is the optimistic case. Your base value
-        replaces the base case only. The Low and High columns stay as the sensitivity range.
+      <Callout tone="info" title={t("How to read this table")}>
+        <strong>{t("Low")}</strong>{" "}
+        {t("is the conservative case: higher costs, lower benefit.")} <strong>{t("High")}</strong>{" "}
+        {t("is the optimistic case. Your base value replaces the base case only. The Low and High columns stay as the sensitivity range.")}
       </Callout>
 
       <Card
-        title="Inputs"
-        description={`${activeOverrides} base value${activeOverrides === 1 ? "" : "s"} overridden. Leave a field empty to keep the base value.`}
+        title={t("Inputs")}
+        description={
+          activeOverrides === 1
+            ? t("1 base value overridden. Leave a field empty to keep the base value.")
+            : t("{count} base values overridden. Leave a field empty to keep the base value.", { count: activeOverrides })
+        }
         actions={
           <div className="action-bar action-bar-inline">
             <button type="button" className="btn btn-primary" onClick={apply} disabled={busy}>
-              {busy ? "Recalculating…" : "Apply values"}
+              {busy ? t("Recalculating…") : t("Apply values")}
             </button>
             <button type="button" className="btn" onClick={clear} disabled={busy}>
-              Reset all
+              {t("Reset all")}
             </button>
           </div>
         }
       >
         {errors.length > 0 ? (
           <div className="stack-sm">
-            <Callout tone="critical" title="Some values were rejected. The results on screen are unchanged.">
+            <Callout tone="critical" title={t("Some values were rejected. The results on screen are unchanged.")}>
               <ul className="error-list">
                 {errors.map((e) => (
                   <li key={e}>{e}</li>
@@ -114,7 +122,12 @@ export function Assumptions({ shared, controls }: { shared: Shared; controls: Co
             </Callout>
           </div>
         ) : null}
-        <DataTable caption="Assumptions with low, base and high values" columns={columns} rows={assumptions} rowKey={(a) => a.key} />
+        <DataTable
+          caption={t("Assumptions with low, base and high values")}
+          columns={columns}
+          rows={assumptions}
+          rowKey={(a) => a.key}
+        />
       </Card>
     </>
   );

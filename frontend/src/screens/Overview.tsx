@@ -4,7 +4,7 @@ import { Callout, Card, ChartFigure, DataTable, Kpi, KpiRow, PageHeader, type Co
 import type { Controls, Shared } from "../appTypes";
 import { SCENARIO_IDS, type ScenarioId, type Totals } from "../api/types";
 import { useChartTheme } from "../theme/ThemeProvider";
-import { formatEur, formatMonth, formatPct } from "../lib/format";
+import { formatEur, formatMonth, formatNumber, formatPct } from "../lib/format";
 import { RECOMMENDED, SCENARIO_SHORT_LABEL, SCENARIO_SLOT } from "../lib/labels";
 import {
   adoptionRows,
@@ -15,6 +15,8 @@ import {
   type Attention,
 } from "../lib/viewModels";
 import { effectiveSaving } from "../lib/assumptions";
+import { t } from "../i18n/i18n";
+import { useLang } from "../i18n/LanguageProvider";
 
 const TONE_TO_CALLOUT: Record<Attention["tone"], "info" | "warning" | "critical" | "success"> = {
   critical: "critical",
@@ -24,39 +26,41 @@ const TONE_TO_CALLOUT: Record<Attention["tone"], "info" | "warning" | "critical"
 };
 
 export function Overview({ shared, controls }: { shared: Shared; controls: Controls }) {
+  useLang();
   const { plan, assumptions } = shared;
   const { series } = useChartTheme();
   const rec = plan.scenarios[RECOMMENDED];
-  const t = rec.totals;
+  const t_ = rec.totals;
   const saving = effectiveSaving(assumptions, controls.overrides);
   const progress = goalProgress(plan.goal, rec.monthly, saving);
   const findings = attentionItems(plan, RECOMMENDED);
 
   const optionBars: OptionBar[] = SCENARIO_IDS.filter((id) => plan.scenarios[id]).map((id) => ({
     id,
-    label: SCENARIO_SHORT_LABEL[id],
+    label: t(SCENARIO_SHORT_LABEL[id]),
     value: plan.scenarios[id].totals.net_eur,
     color: series[SCENARIO_SLOT[id]],
   }));
 
-  const lowestCost = SCENARIO_IDS.every((id) => plan.scenarios[id].totals.cost_total_eur >= t.cost_total_eur);
+  const lowestCost = SCENARIO_IDS.every((id) => plan.scenarios[id].totals.cost_total_eur >= t_.cost_total_eur);
 
   type Row = { id: ScenarioId; t: Totals };
   const compareColumns: Column<Row>[] = [
-    { key: "o", header: "Option", render: (r) => SCENARIO_SHORT_LABEL[r.id] },
-    { key: "c", header: "Cost to deadline", numeric: true, render: (r) => formatEur(r.t.cost_total_eur) },
-    { key: "b", header: "Benefit to deadline", numeric: true, render: (r) => formatEur(r.t.benefit_eur) },
-    { key: "n", header: "Net", numeric: true, render: (r) => formatEur(r.t.net_eur) },
-    { key: "p", header: "Payback", render: (r) => paybackLabel(r.t) },
-    { key: "rr", header: "Yearly net at Dec 2028 run rate ", numeric: true, render: (r) => formatEur(r.t.run_rate_net_eur_year) },
+    { key: "o", header: t("Option"), render: (r) => t(SCENARIO_SHORT_LABEL[r.id]) },
+    { key: "c", header: t("Cost to deadline"), numeric: true, render: (r) => formatEur(r.t.cost_total_eur) },
+    { key: "b", header: t("Benefit to deadline"), numeric: true, render: (r) => formatEur(r.t.benefit_eur) },
+    { key: "n", header: t("Net"), numeric: true, render: (r) => formatEur(r.t.net_eur) },
+    { key: "p", header: t("Payback"), render: (r) => paybackLabel(r.t) },
+    { key: "rr", header: t("Yearly net at Dec 2028 run rate"), numeric: true, render: (r) => formatEur(r.t.run_rate_net_eur_year) },
   ];
   const compareRows: Row[] = SCENARIO_IDS.filter((id) => plan.scenarios[id]).map((id) => ({ id, t: plan.scenarios[id].totals }));
+  const recLabel = t(SCENARIO_SHORT_LABEL[RECOMMENDED]);
 
   return (
     <>
       <PageHeader
-        title="Overview"
-        lead="What the plan costs, what it returns and what to decide. Everything on this page is for the recommended option unless stated."
+        title={t("Overview")}
+        lead={t("What the plan costs, what it returns and what to decide. Everything on this page is for the recommended option unless stated.")}
       />
 
       <Card
@@ -65,88 +69,101 @@ export function Overview({ shared, controls }: { shared: Shared; controls: Contr
       >
         <div className="goal-grid">
           <GoalStat
-            label="AI-assisted share of reviews"
+            label={t("AI-assisted share of reviews")}
             now={formatPct(plan.goal.baseline.ai_assisted_share, 0)}
-            target={`${formatPct(progress.targetShare, 0)} by ${formatMonth(plan.goal.horizon_end)}`}
-            modelled={`${formatPct(progress.shareAtDeadline, 0)} modelled at deadline`}
+            target={t("{share} by {month}", { share: formatPct(progress.targetShare, 0), month: formatMonth(plan.goal.horizon_end) })}
+            modelled={t("{share} modelled at deadline", { share: formatPct(progress.shareAtDeadline, 0) })}
           />
           <GoalStat
-            label="Cost per review (EUR, blended)"
-            now={`EUR ${progress.costBaseline.toFixed(0)}`}
-            target={`EUR ${progress.costTarget.toFixed(2)} (−${formatPct(progress.reductionTarget, 0)})`}
-            modelled={`EUR ${progress.costModelled.toFixed(2)} modelled (−${formatPct(progress.reductionModelled, 0)})`}
+            label={t("Cost per review (EUR, blended)")}
+            now={`EUR ${formatNumber(progress.costBaseline)}`}
+            target={t("EUR {cost} (−{pct})", {
+              cost: formatNumber(progress.costTarget, 2),
+              pct: formatPct(progress.reductionTarget, 0),
+            })}
+            modelled={t("EUR {cost} modelled (−{pct})", {
+              cost: formatNumber(progress.costModelled, 2),
+              pct: formatPct(progress.reductionModelled, 0),
+            })}
             warn={progress.reductionModelled < progress.reductionTarget}
           />
           <div className="goal-stat">
-            <div className="kpi-label">Deadline</div>
+            <div className="kpi-label">{t("Deadline")}</div>
             <div className="goal-stat-value">{plan.goal.deadline}</div>
-            <div className="kpi-sub">No forced redundancies. Reskilling and redeployment first.</div>
+            <div className="kpi-sub">{t("No forced redundancies. Reskilling and redeployment first.")}</div>
           </div>
         </div>
         {progress.reductionModelled < progress.reductionTarget ? (
           <p className="goal-note small muted">
-            The model applies the saving to AI-assisted reviews only. At {formatPct(progress.shareAtDeadline, 0)} adoption the blended
-            reduction is {formatPct(progress.reductionModelled, 0)}, short of the {formatPct(progress.reductionTarget, 0)} target. The
-            gap is shown, not closed.
+            {t(
+              "The model applies the saving to AI-assisted reviews only. At {share} adoption the blended reduction is {reduction}, short of the {target} target. The gap is shown, not closed.",
+              {
+                share: formatPct(progress.shareAtDeadline, 0),
+                reduction: formatPct(progress.reductionModelled, 0),
+                target: formatPct(progress.reductionTarget, 0),
+              },
+            )}
           </p>
         ) : null}
       </Card>
 
       <KpiRow>
-        <Kpi label="Cost to deadline" value={formatEur(t.cost_total_eur)} sub={`One-off ${formatEur(t.cost_one_off_eur)}`} />
-        <Kpi label="Benefit to deadline" value={formatEur(t.benefit_eur)} sub="Fewer costly reviews" />
-        <Kpi label="Net to deadline" value={formatEur(t.net_eur)} tone={t.net_eur < 0 ? "bad" : "good"} />
-        <Kpi label="ROI to deadline" value={formatPct(t.roi)} tone={t.roi !== null && t.roi < 0 ? "bad" : "good"} sub="(benefit − cost) ÷ cost" />
         <Kpi
-          label="Payback"
-          value={t.payback_month ? formatMonth(t.payback_month) : "Not reached"}
+          label={t("Payback")}
+          value={t_.payback_month ? formatMonth(t_.payback_month) : t("Not reached")}
           sub={
-            t.payback_within_deadline
-              ? "Within the deadline"
-              : t.payback_month
-                ? `${t.payback_months_after_deadline ?? 0} months after the deadline `
-                : `Not within ${PAYBACK_LIMIT_YEARS} years`
+            t_.payback_within_deadline
+              ? t("Within the deadline")
+              : t_.payback_month
+                ? t("{months} months after the deadline", { months: t_.payback_months_after_deadline ?? 0 })
+                : t("Not within {years} years", { years: PAYBACK_LIMIT_YEARS })
           }
-          tone={t.payback_month && t.payback_within_deadline ? "good" : undefined}
+          tone={t_.payback_month && t_.payback_within_deadline ? "good" : undefined}
         />
+        <Kpi label={t("Benefit to deadline")} value={formatEur(t_.benefit_eur)} sub={t("Fewer costly reviews")} />
+        <Kpi label={t("Net to deadline")} value={formatEur(t_.net_eur)} tone={t_.net_eur < 0 ? "bad" : "good"} />
         <Kpi
-          label="Yearly net at Dec 2028 run rate"
-          value={formatEur(t.run_rate_net_eur_year)}
-          tone={t.run_rate_net_eur_year < 0 ? "bad" : "good"}
-          sub="Dec 2028 benefit minus recurring cost, × 12"
+          label={t("Yearly net at Dec 2028 run rate")}
+          value={formatEur(t_.run_rate_net_eur_year)}
+          tone={t_.run_rate_net_eur_year < 0 ? "bad" : "good"}
+          sub={t("Dec 2028 benefit minus recurring cost, × 12")}
         />
       </KpiRow>
 
       <div className="grid-2">
-        <Card title="AI-assisted share of reviews, by month" description={`${SCENARIO_SHORT_LABEL[RECOMMENDED]} option. The horizontal line marks the goal target.`}>
+        <Card title={t("AI-assisted share of reviews, by month")} description={t("{option} option. The horizontal line marks the goal target.", { option: t(SCENARIO_SHORT_LABEL[RECOMMENDED]) })}>
           <ChartFigure
-            label="Line chart of the AI-assisted share by month against the 60% target."
-            note="Share rises as each milestone completes. The target line marks the goal."
-            tableLabel="Show monthly share as table"
+            label={t("Line chart of the AI-assisted share by month against the goal target.")}
+            note={t("Share rises as each milestone completes. The target line marks the goal.")}
+            tableLabel={t("Show monthly share as table")}
             table={
               <DataTable
-                caption="AI-assisted share by month"
+                caption={t("AI-assisted share by month")}
                 columns={[
-                  { key: "m", header: "Month", render: (r: { month: string; share: number }) => formatMonth(r.month) },
-                  { key: "s", header: "AI-assisted share", numeric: true, render: (r) => formatPct(r.share, 0) },
+                  { key: "m", header: t("Month"), render: (r: { month: string; share: number }) => formatMonth(r.month) },
+                  { key: "s", header: t("AI-assisted share"), numeric: true, render: (r) => formatPct(r.share, 0) },
                 ]}
                 rows={adoptionRows(rec.monthly)}
                 rowKey={(r) => r.month}
               />
             }
           >
-            <AdoptionChart rows={adoptionRows(rec.monthly)} target={progress.targetShare} targetLabel={`Target ${formatPct(progress.targetShare, 0)}`} />
+            <AdoptionChart
+              rows={adoptionRows(rec.monthly)}
+              target={progress.targetShare}
+              targetLabel={t("Target {share}", { share: formatPct(progress.targetShare, 0) })}
+            />
           </ChartFigure>
         </Card>
 
         <Card
-          title="Net value to deadline, by option"
-          description="Benefit is the same in every option, so the options differ in cost."
+          title={t("Net value to deadline, by option")}
+          description={t("Benefit is the same in every option, so the options differ in cost.")}
         >
           <ChartFigure
-            label="Bar chart of net value to the deadline for each option. Negative values are to the left of zero."
-            tableLabel="Show options as table"
-            table={<DataTable caption="Options compared" columns={compareColumns} rows={compareRows} rowKey={(r) => r.id} />}
+            label={t("Bar chart of net value to the deadline for each option. Negative values are to the left of zero.")}
+            tableLabel={t("Show options as table")}
+            table={<DataTable caption={t("Options compared")} columns={compareColumns} rows={compareRows} rowKey={(r) => r.id} />}
           >
             <NetByOptionChart rows={optionBars} />
           </ChartFigure>
@@ -154,7 +171,7 @@ export function Overview({ shared, controls }: { shared: Shared; controls: Contr
       </div>
 
       <div className="grid-2">
-        <Card title="What needs attention" description={`${SCENARIO_SHORT_LABEL[RECOMMENDED]} option, computed from the model.`}>
+        <Card title={t("What needs attention")} description={t("{option} option, computed from the model.", { option: recLabel })}>
           <div className="stack">
             {findings.map((f) => (
               <Callout key={f.id} tone={TONE_TO_CALLOUT[f.tone]} title={f.title}>
@@ -169,16 +186,17 @@ export function Overview({ shared, controls }: { shared: Shared; controls: Contr
           </div>
         </Card>
 
-        <Card title="Recommendation" description="Recommendation for the CEO to review.">
+        <Card title={t("Recommendation")} description={t("Recommendation for the CEO to review.")}>
           <div className="stack">
             <p className="rec-title">
-              <strong>{SCENARIO_SHORT_LABEL[RECOMMENDED]}</strong> — reskilling and redeployment first, hiring only where internal
-              supply cannot cover the need.
+              <strong>{recLabel}</strong>{" "}
+              {t("— reskilling and redeployment first, hiring only where internal supply cannot cover the need.")}
             </p>
-            {lowestCost ? <p className="small">It has the lowest cost to the deadline of the three options.</p> : null}
+            {lowestCost ? <p className="small">{t("It has the lowest cost to the deadline of the three options.")}</p> : null}
             <p className="small muted">
-              Decisions for approval: the roadmap timing, the model-risk gate before scale-up (M2 before M3), and any workforce
-              change, which needs HR, legal and employee-representation review.
+              {t(
+                "Decisions for approval: the roadmap timing, the model-risk gate before scale-up (M2 before M3), and any workforce change, which needs HR, legal and employee-representation review.",
+              )}
             </p>
           </div>
         </Card>
@@ -207,14 +225,14 @@ function GoalStat({
       <div className="kpi-label">{label}</div>
       <div className="goal-stat-flow">
         <span>
-          <span className="muted small">Now</span>
+          <span className="muted small">{t("Now")}</span>
           <strong>{now}</strong>
         </span>
         <span aria-hidden="true" className="goal-arrow">
           →
         </span>
         <span>
-          <span className="muted small">Target</span>
+          <span className="muted small">{t("Target")}</span>
           <strong>{target}</strong>
         </span>
       </div>

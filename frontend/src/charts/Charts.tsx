@@ -23,6 +23,7 @@ import { useChartTheme } from "../theme/ThemeProvider";
 import { formatAxisMonth, formatEur, formatEurCompact, formatFte, formatPct } from "../lib/format";
 import type { AdoptionPoint, CashRow, CoverageRow, CumulativeRow, MixRow } from "../lib/viewModels";
 import { ACTION_TYPE_LABEL } from "../lib/labels";
+import { t } from "../i18n/i18n";
 import type { ActionType } from "../api/types";
 
 // ---------------------------------------------------------------- shared pieces
@@ -131,7 +132,7 @@ export function AdoptionChart({ rows, target, targetLabel }: { rows: AdoptionPoi
         <Line
           type="monotone"
           dataKey="share"
-          name="AI-assisted share"
+          name={t("AI-assisted share")}
           stroke={series[0]}
           strokeWidth={2.5}
           dot={false}
@@ -192,7 +193,7 @@ export function CumulativeChart({
           x={deadlineMonth}
           stroke={chrome.axis}
           strokeWidth={1}
-          label={{ value: "Deadline", position: "insideTopRight", fill: chrome.inkSecondary, fontSize: 12 }}
+          label={{ value: t("Deadline"), position: "insideTopRight", fill: chrome.inkSecondary, fontSize: 12 }}
         />
         <Tooltip cursor={{ stroke: chrome.axis }} content={(p) => <ChartTooltip {...p} keyShape="line" format={(v) => formatEur(v)} />} />
         <Legend iconType="plainline" formatter={legendText(chrome.inkSecondary)} wrapperStyle={{ fontSize: 13, paddingTop: 8 }} />
@@ -252,8 +253,8 @@ export function CashChart({ rows }: { rows: CashRow[] }) {
           )}
         />
         <Legend iconType="square" formatter={legendText(chrome.inkSecondary)} wrapperStyle={{ fontSize: 13, paddingTop: 8 }} />
-        <Bar dataKey="benefit" name="Benefit" stackId="cash" fill={series[0]} maxBarSize={18} />
-        <Bar dataKey="cost" name="Cost" stackId="cash" fill={series[1]} maxBarSize={18} />
+        <Bar dataKey="benefit" name={t("Benefit")} stackId="cash" fill={series[0]} maxBarSize={18} />
+        <Bar dataKey="cost" name={t("Cost")} stackId="cash" fill={series[1]} maxBarSize={18} />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -295,7 +296,7 @@ export function NetByOptionChart({ rows }: { rows: OptionBar[] }) {
           cursor={{ fill: chrome.grid, fillOpacity: 0.5 }}
           content={(p) => <ChartTooltip {...p} keyShape="box" format={(v) => formatEur(v)} />}
         />
-        <Bar dataKey="value" name="Net to deadline" maxBarSize={24}>
+        <Bar dataKey="value" name={t("Net to deadline")} maxBarSize={24}>
           {rows.map((r) => (
             <Cell key={r.id} fill={r.color} />
           ))}
@@ -345,14 +346,14 @@ export function CoverageChart({
         <Area
           type="stepAfter"
           dataKey="required"
-          name="Required FTE"
+          name={t("Required FTE")}
           stroke={chrome.inkSecondary}
           strokeWidth={2}
           fill={chrome.inkSecondary}
           fillOpacity={0.08}
           dot={false}
         />
-        <Line type="stepAfter" dataKey="staffed" name="Staffed FTE" stroke={series[0]} strokeWidth={2} dot={false} />
+        <Line type="stepAfter" dataKey="staffed" name={t("Staffed FTE")} stroke={series[0]} strokeWidth={2} dot={false} />
       </ComposedChart>
     </ResponsiveContainer>
   );
@@ -391,7 +392,7 @@ export function MixChart({ rows }: { rows: MixRow[] }) {
           <Bar
             key={p.key}
             dataKey={p.key}
-            name={ACTION_TYPE_LABEL[p.key]}
+            name={t(ACTION_TYPE_LABEL[p.key])}
             stackId="mix"
             fill={p.color}
             stroke={chrome.surface}

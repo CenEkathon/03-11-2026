@@ -285,6 +285,12 @@ export interface components {
             assumption_overrides?: {
                 [key: string]: number;
             } | null;
+            /**
+             * Lang
+             * @default en
+             * @enum {string}
+             */
+            lang: "en" | "nl";
         };
         /** BriefResponse */
         BriefResponse: {

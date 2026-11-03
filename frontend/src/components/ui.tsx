@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
+import { t } from "../i18n/i18n";
 
 // ---------------------------------------------------------------- layout
 
@@ -125,7 +126,7 @@ export function DataTable<T>({
   rows,
   caption,
   rowKey,
-  emptyText = "Nothing to show.",
+  emptyText,
 }: {
   columns: Column<T>[];
   rows: T[];
@@ -150,7 +151,7 @@ export function DataTable<T>({
           {rows.length === 0 ? (
             <tr>
               <td colSpan={columns.length} className="empty">
-                {emptyText}
+                {emptyText ?? t("Nothing to show.")}
               </td>
             </tr>
           ) : (
@@ -171,10 +172,10 @@ export function DataTable<T>({
 }
 
 /** Table view for a chart. Every chart ships one, so values never depend on colour or hover. */
-export function TableView({ children, label = "Show as table" }: { children: ReactNode; label?: string }) {
+export function TableView({ children, label }: { children: ReactNode; label?: string }) {
   return (
     <details className="table-view">
-      <summary>{label}</summary>
+      <summary>{label ?? t("Show as table")}</summary>
       {children}
     </details>
   );
@@ -246,7 +247,7 @@ export function Dialog({
         <header className="dialog-head">
           <h2 id={titleId}>{title}</h2>
           <button type="button" className="btn btn-ghost" onClick={onClose}>
-            Close
+            {t("Close")}
           </button>
         </header>
         {open ? children : null}

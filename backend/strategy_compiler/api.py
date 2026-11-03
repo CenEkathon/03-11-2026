@@ -193,7 +193,7 @@ def brief(req: BriefRequest) -> BriefResponse:
             assumption_overrides=req.assumption_overrides,
         )
     )
-    return build_brief(plan, req.scenario)
+    return build_brief(plan, req.scenario, req.lang)
 
 
 @app.get("/api/usage")

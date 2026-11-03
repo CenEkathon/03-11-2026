@@ -213,3 +213,24 @@ def test_brief_rejects_invalid_roadmap(client):
         json={"scenario": "hybrid", "milestone_dates": {"M3": {"start": "2027-11", "end": "2028-05"}}},
     )
     assert response.status_code == 422
+
+
+def test_dutch_template_brief_is_labelled_mock_and_uses_dutch_numbers(base_plan):
+    from strategy_compiler.narrative import _template_nl
+
+    text = _template_nl(build_facts(base_plan, "hybrid"))
+    assert "MOCK" in text
+    assert "Programmakosten" in text
+    assert not EMPLOYEE_ID.search(text)
+
+
+def test_api_brief_dutch_default_is_template(client):
+    body = client.post("/api/brief", json={"scenario": "hybrid", "lang": "nl"}).json()
+    assert body["drafted_by"] == "template"
+    assert "MOCK-BRIEF" in body["text"]
+    assert "Gevraagde beslissing" in body["text"]
+
+
+def test_api_brief_rejects_unknown_language(client):
+    response = client.post("/api/brief", json={"scenario": "hybrid", "lang": "fr"})
+    assert response.status_code == 422

@@ -13,6 +13,8 @@ import { Roadmap } from "./screens/Roadmap";
 import { Workforce } from "./screens/Workforce";
 import { Intake, type IntakeInput } from "./screens/Intake";
 import { analysisStepAt, MOCK_ANALYSIS_DELAY_MS } from "./lib/analysisSteps";
+import { t } from "./i18n/i18n";
+import { useLang } from "./i18n/LanguageProvider";
 
 
 /** The app starts on intake. The plan only loads after the mock analysis has been started. */
@@ -31,10 +33,12 @@ function buildRequest(
 }
 
 function messageOf(e: unknown): string {
-  return e instanceof Error ? e.message : "Unknown error";
+  return e instanceof Error ? e.message : t("Unknown error");
 }
 
 export default function App() {
+  // Subscribes to the language so that every screen rebuilds its text when the language changes.
+  useLang();
   const [page, goToPage] = useHashPage();
   const [caseId, setCaseId] = useState<CaseId>("base");
   const [dates, setDates] = useState<Record<string, MilestoneDates>>({});
@@ -151,15 +155,15 @@ export default function App() {
   } else if (loadError) {
     content = (
       <>
-        <PageHeader title="The plan could not load" />
-        <Callout tone="critical" title={`Could not reach the API at ${API_BASE}`}>
+        <PageHeader title={t("The plan could not load")} />
+        <Callout tone="critical" title={t("Could not reach the API at {url}", { url: API_BASE })}>
           <p>{loadError}</p>
           <p>
-            Start the backend from <code>backend/</code> with <code>uv run uvicorn strategy_compiler.api:app --port 8000</code>, then
-            try again.
+            {t("Start the backend from")} <code>backend/</code> {t("with")}{" "}
+            <code>uv run uvicorn strategy_compiler.api:app --port 8000</code>, {t("then try again.")}
           </p>
           <button type="button" className="btn" onClick={() => window.location.reload()}>
-            Try again
+            {t("Try again")}
           </button>
         </Callout>
       </>
@@ -171,7 +175,7 @@ export default function App() {
       <>
         {globalError ? (
           <div className="stack-sm">
-            <Callout tone="critical" title="The last recalculation failed. The results on screen are from before it.">
+            <Callout tone="critical" title={t("The last recalculation failed. The results on screen are from before it.")}>
               {globalError}
             </Callout>
           </div>
@@ -204,12 +208,12 @@ function AnalyzingScreen({ input }: { input: IntakeInput | null }) {
 
   return (
     <>
-      <PageHeader title="Analysing your brief" lead="Analysing the brief. This takes about seven seconds." />
+      <PageHeader title={t("Analysing your brief")} lead={t("Analysing the brief. This takes about seven seconds.")} />
       <div className="skeleton-page">
-        <Card title="Working">
+        <Card title={t("Working")}>
           <p className="analysis-splash" role="status" aria-live="polite">
             <span key={step} className="analysis-splash-text">
-              {step}…
+              {t(step)}…
             </span>
           </p>
           <div className="skeleton-lines" aria-hidden="true">
@@ -218,12 +222,12 @@ function AnalyzingScreen({ input }: { input: IntakeInput | null }) {
             <span />
           </div>
         </Card>
-        <Card title="Received">
+        <Card title={t("Received")}>
           {input ? (
             <ul className="analysis-received">
-              <li>Brief: {input.text.length} characters</li>
+              <li>{t("Brief: {count} characters", { count: input.text.length })}</li>
               <li>
-                Workers: <strong>{input.fileName}</strong>, {input.workers.rowCount} rows
+                {t("Workers:")} <strong>{input.fileName}</strong>, {t("{count} rows", { count: input.workers.rowCount })}
               </li>
             </ul>
           ) : null}
@@ -241,8 +245,8 @@ function AnalyzingScreen({ input }: { input: IntakeInput | null }) {
 function LoadingSkeleton() {
   return (
     <div className="skeleton-page" role="status" aria-live="polite">
-      <span className="sr-only">Loading the plan…</span>
-      <Card title="Loading">
+      <span className="sr-only">{t("Loading the plan…")}</span>
+      <Card title={t("Loading")}>
         <div className="skeleton-lines" aria-hidden="true">
           <span />
           <span />
