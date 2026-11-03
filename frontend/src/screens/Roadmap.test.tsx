@@ -37,6 +37,11 @@ describe("Roadmap timing table", () => {
     expect(within(rows[3]).getByText("Target 2.50 EUR/day")).toBeTruthy();
   });
 
+  it("states how many milestones the plan has, taken from the plan", () => {
+    renderRoadmap();
+    expect(screen.getByText(/^4 milestones, each starting after the one before it ends\./)).toBeTruthy();
+  });
+
   it("shows the applied month values in the inputs", () => {
     renderRoadmap();
     expect((screen.getByLabelText("M2 start month") as HTMLInputElement).value).toBe("2027-07");

@@ -99,7 +99,7 @@ export function Roadmap({ shared, controls }: { shared: Shared; controls: Contro
     <>
       <PageHeader
         title="Roadmap"
-        lead="Six milestones, each starting after the one before it ends. Change a start or end month and the timeline updates. Apply to recalculate costs and workforce needs."
+        lead={`${plan.milestones.length} milestones, each starting after the one before it ends. Change a start or end month and the timeline updates. Apply to recalculate costs and workforce needs.`}
         actions={<LabelBadge labelKey="roadmap" />}
       />
 
