@@ -1,10 +1,14 @@
 import { render, type RenderOptions } from "@testing-library/react";
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { ThemeProvider } from "../theme/ThemeProvider";
 
-/** Renders with the theme provider that every chart and the shell read from. */
+function Wrapper({ children }: { children: ReactNode }) {
+  return <ThemeProvider>{children}</ThemeProvider>;
+}
+
+/** Renders with the theme provider that every chart and the shell read from. rerender keeps the provider. */
 export function renderWithTheme(ui: ReactElement, options?: RenderOptions) {
-  return render(<ThemeProvider>{ui}</ThemeProvider>, options);
+  return render(ui, { wrapper: Wrapper, ...options });
 }
 
 /** The element that carries a KPI or goal label, found by its visible text. */

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, within } from "@testing-library/react";
 import { Workforce } from "./Workforce";
-import { MILESTONES, makePlan, makeShared, scenarioFor, SKILL_FIT, REQUIREMENTS, CASE_INFO, SKILL_LABELS } from "../test/fixtures";
+import { MILESTONES, makePlan, makeShared, scenarioFor, SKILL_FIT, REQUIREMENTS, CASE_INFO } from "../test/fixtures";
 import { renderWithTheme } from "../test/render";
 import { lastOf, resetRecorded } from "../test/rechartsStub";
 
@@ -145,8 +145,10 @@ describe("Workforce fallbacks", () => {
   });
 
   it("falls back to the first milestone when the chosen one has left the plan", () => {
-    const plan = makePlan({ milestones: MILESTONES.slice(1).map((m) => ({ ...m })) });
-    renderWorkforce(makeShared({ plan, skillLabels: SKILL_LABELS }));
+    const { rerender } = renderWorkforce();
+    expect(screen.getByText(/Pilot AI triage/)).toBeTruthy();
+    const later = makePlan({ milestones: MILESTONES.slice(1).map((m) => ({ ...m })) });
+    rerender(<Workforce shared={makeShared({ plan: later })} />);
     expect(screen.getByText(/Model risk gate: Jul 2027 - Dec 2027/)).toBeTruthy();
   });
 });
@@ -172,6 +174,13 @@ describe("Workforce evidence dialog", () => {
     expect(within(dialog).getByText("EMP-0001")).toBeTruthy();
     expect(within(dialog).getByText("EMP-0002")).toBeTruthy();
     expect(within(dialog).getByText("Requirement basis: observed (medium confidence). Mock requirement for the pilot.")).toBeTruthy();
+  });
+
+  it("names the skill by its id in the evidence dialog when it has no label", () => {
+    renderWorkforce(makeShared({ skillLabels: {} }));
+    const dialog = document.querySelector("dialog") as HTMLDialogElement;
+    fireEvent.click(within(requirementsTable()).getAllByRole("button", { name: "View IDs" })[0]);
+    expect(within(dialog).getByText("aml_monitoring")).toBeTruthy();
   });
 
   it("says when a requirement has no vacancy observation or no sample IDs", () => {

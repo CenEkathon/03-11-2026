@@ -18,6 +18,8 @@ export function Options({ shared }: { shared: Shared }) {
   const assumptionUnit = useMemo(() => new Map(shared.assumptions.map((a) => [a.key, a.unit])), [shared.assumptions]);
   const mix = actionMixRows(result.actions, plan.milestones);
   const actions = result.actions.filter((a) => milestoneFilter === "all" || a.milestone_id === milestoneFilter);
+  const dependsOn = openAction?.depends_on ?? [];
+  const skillsGained = openAction?.skills_gained ?? [];
 
   const actionColumns: Column<ActionLine>[] = [
     { key: "ms", header: "Milestone", render: (a) => a.milestone_id },
@@ -198,11 +200,11 @@ export function Options({ shared }: { shared: Shared }) {
               </div>
               <div>
                 <dt>Depends on</dt>
-                <dd>{(openAction.depends_on ?? []).length ? (openAction.depends_on ?? []).join(", ") : "Nothing"}</dd>
+                <dd>{dependsOn.length ? dependsOn.join(", ") : "Nothing"}</dd>
               </div>
               <div>
                 <dt>Skills gained</dt>
-                <dd>{(openAction.skills_gained ?? []).length ? (openAction.skills_gained ?? []).map((s) => skillLabels[s] ?? s).join(", ") : "None"}</dd>
+                <dd>{skillsGained.length ? skillsGained.map((s) => skillLabels[s] ?? s).join(", ") : "None"}</dd>
               </div>
               <div>
                 <dt>Source and confidence</dt>

@@ -337,9 +337,8 @@ describe("App load states", () => {
     fireEvent.click(within(screen.getByRole("group", { name: "Assumption case" })).getByRole("button", { name: "High" }));
     expect(mocked.computePlan).not.toHaveBeenCalled();
 
-    const retry = screen.getByRole("button", { name: "Try again" });
-    expect(retry).toBeTruthy();
-    fireEvent.click(retry);
+    // jsdom cannot navigate, so its reload prints a "not implemented" line. The click itself must still run.
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
   });
 
   it("does not apply a load that finishes after the app has been closed", async () => {
