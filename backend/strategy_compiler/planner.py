@@ -202,6 +202,8 @@ class _Planner:
                     self._external(r, months, covered)
                 elif source == "hire":
                     self._hire(r, months, covered)
+                else:
+                    raise ValueError(f"unknown sourcing policy step: {source}")
             self.raw.covered[r.id] = covered
 
             hire_start = max(parse_month(r.start), self.hire_available) if "hire" in self.policy else None
