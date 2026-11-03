@@ -1,6 +1,6 @@
 import { AdoptionChart, NetByOptionChart, type OptionBar } from "../charts/Charts";
 import { BriefPanel } from "../components/BriefPanel";
-import { Callout, Card, ChartFigure, DataTable, Kpi, KpiRow, LabelBadge, PageHeader, type Column } from "../components/ui";
+import { Callout, Card, ChartFigure, DataTable, Kpi, KpiRow, PageHeader, type Column } from "../components/ui";
 import type { Controls, Shared } from "../appTypes";
 import { SCENARIO_IDS, type ScenarioId, type Totals } from "../api/types";
 import { useChartTheme } from "../theme/ThemeProvider";
@@ -8,8 +8,10 @@ import { formatEur, formatMonth, formatPct } from "../lib/format";
 import { RECOMMENDED, SCENARIO_SHORT_LABEL, SCENARIO_SLOT } from "../lib/labels";
 import {
   adoptionRows,
+  PAYBACK_LIMIT_YEARS,
   attentionItems,
   goalProgress,
+  paybackLabel,
   type Attention,
 } from "../lib/viewModels";
 import { effectiveSaving } from "../lib/assumptions";
@@ -45,8 +47,8 @@ export function Overview({ shared, controls }: { shared: Shared; controls: Contr
     { key: "c", header: "Cost to deadline", numeric: true, render: (r) => formatEur(r.t.cost_total_eur) },
     { key: "b", header: "Benefit to deadline", numeric: true, render: (r) => formatEur(r.t.benefit_eur) },
     { key: "n", header: "Net", numeric: true, render: (r) => formatEur(r.t.net_eur) },
-    { key: "p", header: "Payback by deadline", render: (r) => (r.t.payback_month ? formatMonth(r.t.payback_month) : "Not by deadline") },
-    { key: "rr", header: "Yearly net at Dec 2028 run rate (estimate)", numeric: true, render: (r) => formatEur(r.t.run_rate_net_eur_year) },
+    { key: "p", header: "Payback", render: (r) => paybackLabel(r.t) },
+    { key: "rr", header: "Yearly net at Dec 2028 run rate ", numeric: true, render: (r) => formatEur(r.t.run_rate_net_eur_year) },
   ];
   const compareRows: Row[] = SCENARIO_IDS.filter((id) => plan.scenarios[id]).map((id) => ({ id, t: plan.scenarios[id].totals }));
 
@@ -58,9 +60,8 @@ export function Overview({ shared, controls }: { shared: Shared; controls: Contr
       />
 
       <Card
-        title={plan.goal.title.replace(/^MOCK GOAL:\s*/, "")}
+        title={plan.goal.title}
         description={plan.goal.statement}
-        actions={<LabelBadge labelKey="goal" />}
       >
         <div className="goal-grid">
           <GoalStat
@@ -98,18 +99,26 @@ export function Overview({ shared, controls }: { shared: Shared; controls: Contr
         <Kpi label="ROI to deadline" value={formatPct(t.roi)} tone={t.roi !== null && t.roi < 0 ? "bad" : "good"} sub="(benefit − cost) ÷ cost" />
         <Kpi
           label="Payback"
-          value={t.payback_month ? formatMonth(t.payback_month) : "Not by deadline"}
+          value={t.payback_month ? formatMonth(t.payback_month) : "Not reached"}
+          sub={
+            t.payback_within_deadline
+              ? "Within the deadline"
+              : t.payback_month
+                ? `${t.payback_months_after_deadline ?? 0} months after the deadline `
+                : `Not within ${PAYBACK_LIMIT_YEARS} years`
+          }
+          tone={t.payback_month && t.payback_within_deadline ? "good" : undefined}
         />
         <Kpi
           label="Yearly net at Dec 2028 run rate"
           value={formatEur(t.run_rate_net_eur_year)}
           tone={t.run_rate_net_eur_year < 0 ? "bad" : "good"}
-          sub="Estimate, not a forecast"
+          sub="Dec 2028 benefit minus recurring cost, × 12"
         />
       </KpiRow>
 
       <div className="grid-2">
-        <Card title="AI-assisted share of reviews, by month" description={`${SCENARIO_SHORT_LABEL[RECOMMENDED]} option. The horizontal line marks the goal target.`} actions={<LabelBadge labelKey="roadmap" />}>
+        <Card title="AI-assisted share of reviews, by month" description={`${SCENARIO_SHORT_LABEL[RECOMMENDED]} option. The horizontal line marks the goal target.`}>
           <ChartFigure
             label="Line chart of the AI-assisted share by month against the 60% target."
             note="Share rises as each milestone completes. The target line marks the goal."
@@ -132,8 +141,7 @@ export function Overview({ shared, controls }: { shared: Shared; controls: Contr
 
         <Card
           title="Net value to deadline, by option"
-          description="Estimate. Benefit is the same in every option, so the options differ in cost."
-          actions={<LabelBadge labelKey="estimates" />}
+          description="Benefit is the same in every option, so the options differ in cost."
         >
           <ChartFigure
             label="Bar chart of net value to the deadline for each option. Negative values are to the left of zero."
@@ -155,13 +163,13 @@ export function Overview({ shared, controls }: { shared: Shared; controls: Contr
             ))}
             {plan.goal.constraints.length ? (
               <p className="small muted">
-                Constraints from the mock goal: {plan.goal.constraints.join("; ")}.
+                Constraints: {plan.goal.constraints.join("; ")}.
               </p>
             ) : null}
           </div>
         </Card>
 
-        <Card title="Recommendation" description="Mock recommendation for the CEO to test, not a decision.">
+        <Card title="Recommendation" description="Recommendation for the CEO to review.">
           <div className="stack">
             <p className="rec-title">
               <strong>{SCENARIO_SHORT_LABEL[RECOMMENDED]}</strong> — reskilling and redeployment first, hiring only where internal

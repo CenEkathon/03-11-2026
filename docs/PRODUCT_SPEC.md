@@ -22,9 +22,10 @@ Show what happens after a CEO gives a future business goal. The app turns it int
 Three ways to staff the same roadmap: redeploy first, retrain first, or hire first. Each one has:
 - **Benefit:** reviews per month × share of AI-assisted reviews × EUR 48 × 35%. Only when the people for the step are in place.
 - **Costs:** one-off costs (moving people, training, hiring, change budget per step) and yearly costs (backfill, pay rises, new salaries, contractors, platform).
-- **Results:** net through Dec 2028, ROI, the month cumulative net turns positive (if it does), and the **net per year at the Dec 2028 run rate**. This last number is simple and is not a forecast.
+- **Results:** net through Dec 2028, ROI, the **payback month** (the month cumulative net turns positive, which may be after Dec 2028), and the **net per year at the Dec 2028 run rate**. This last number is simple and is not a forecast.
+- **Payback after the deadline.** If the option is still negative at Dec 2028, the Dec 2028 run rate continues month by month, with no new one-off costs, until cumulative net reaches zero. The result is labelled as an estimate. It is capped at 20 years.
 
-Twelve mock assumptions drive the money, each with low, base and high values (see `fixtures/assumptions.yaml`). There is no discounting, no salary bands and no extrapolation beyond the deadline.
+Twelve mock assumptions drive the money, each with low, base and high values (see `fixtures/assumptions.yaml`). There is no discounting and no salary bands. Beyond the deadline, only the payback search continues, at the Dec 2028 run rate.
 
 ## Not doing
 - Free-text goal entry, or generating a roadmap from a real strategy. Future scope.
@@ -32,7 +33,7 @@ Twelve mock assumptions drive the money, each with low, base and high values (se
 - Employee-level surplus, ranking or termination suggestions. Surplus is only ever an aggregate FTE flagged for HR, legal and employee-representation review.
 - Claims about KBC or any other real company. Vacancy data is shown as an aggregate and not attributed to employers in the UI.
 - Presentation slides. Not generated, as instructed.
-- Salary bands, NPV, discount rates, a 60-month extrapolation. Removed to keep the demo explainable.
+- Salary bands, NPV, discount rates, and a fixed 60-month extension. Removed to keep the demo explainable. Payback is searched past the deadline only as far as it is needed (2026-11-03 change, see above).
 
 ## User journey
 1. **Goal.** See the mock goal, its baseline, target, deadline and constraints.
@@ -40,10 +41,10 @@ Twelve mock assumptions drive the money, each with low, base and high values (se
 3. **Demand.** For each step, see roles, skills, minimum level, FTE by month, and the vacancy share for the skill.
 4. **Supply and gaps.** See contributing-team coverage per requirement, the number of people who already qualify (with IDs as evidence), reskill candidates, and shortfalls with reasons.
 5. **Options.** For each requirement and option, see redeploy, reskill, contractor and hire actions with people, FTE, start, duration, cost and an estimate badge.
-6. **Money.** See monthly and cumulative cost and benefit, ROI, payback within the deadline, the yearly net at the run rate, a three-option comparison and a low/base/high table. Assumptions can be edited.
+6. **Money.** See monthly and cumulative cost and benefit, ROI, payback (inside or after the deadline), the yearly net at the run rate, a three-option comparison and a low/base/high table. Assumptions can be edited.
 7. **CEO brief.** See the recommendation (hybrid), the aggregate workforce impact, budget by phase, value, risks, assumptions and decisions requiring approval. Narrative is drafted (template or live Claude) and labelled as such. Numbers come from the engine.
 
-## Screens (six, all labelled MOCK, SYNTHETIC or EXTERNAL)
+## Screens (six, with one demo footer on each)
 1. Overview: goal progress, KPIs, AI-share chart, net value by option, attention points, brief.
 2. Roadmap: Gantt timeline that previews edits, and the timing editor.
 3. Workforce: per step, required vs staffed FTE chart, requirements, eligible counts and evidence IDs.
@@ -71,7 +72,7 @@ Defined in `backend/strategy_compiler/contracts.py`. The OpenAPI schema is serve
 
 ## Acceptance criteria
 - A user can load the mock goal and roadmap, edit dates, and see requirements, actions, costs and benefits per step and overall, with traceable formulas.
-- Every screen and payload is labelled MOCK, SYNTHETIC or EXTERNAL, as appropriate.
+- Every screen carries the demo footer (illustrative, invented assumptions, not KBC data). Per-element tags are not used.
 - Core calculations have automated tests: DAG and ramp, supply ledger, planner rules, finance formulas, and option properties.
 - No employee-level surplus, ranking or dismissal suggestion appears in any response or brief.
 - The demo works offline. The narrative falls back to the template.

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { MixChart } from "../charts/Charts";
-import { Badge, Card, ChartFigure, Dialog, DataTable, LabelBadge, PageHeader, Segmented, type Column } from "../components/ui";
+import { Card, ChartFigure, Dialog, DataTable, PageHeader, Segmented, type Column } from "../components/ui";
 import type { Shared } from "../appTypes";
 import { SCENARIO_IDS, type ActionLine, type ActionType, type ScenarioId } from "../api/types";
 import { formatByUnit, formatEur, formatFte, formatMonth } from "../lib/format";
@@ -70,7 +70,7 @@ export function Options({ shared }: { shared: Shared }) {
     <>
       <PageHeader
         title="Options"
-        lead="Three ways to staff the same roadmap. Each one mixes reskilling, redeployment, contractors and hiring differently. Every line is an estimate."
+        lead="Three ways to staff the same roadmap. Each one mixes reskilling, redeployment, contractors and hiring differently."
         actions={
           <Segmented
             label="Option"
@@ -124,7 +124,6 @@ export function Options({ shared }: { shared: Shared }) {
       <Card
         title={`Where the FTE comes from: ${SCENARIO_SHORT_LABEL[scenario]}`}
         description="FTE assigned to each milestone's requirements, split by action. The stack adds up to the FTE that milestone needs."
-        actions={<LabelBadge labelKey="estimates" />}
       >
         <div className="legend-help">
           {(Object.keys(ACTION_TYPE_HELP) as ActionType[]).map((k) => (
@@ -144,8 +143,7 @@ export function Options({ shared }: { shared: Shared }) {
 
       <Card
         title="Actions"
-        description="Each action is a line the planner chose from the mock rules. People and FTE come from the plan. Employee IDs are not listed here: see the Workforce page for the evidence."
-        actions={<LabelBadge labelKey="estimates" />}
+        description="Each action is a line the planner chose from the planning rules. People and FTE come from the plan. Employee IDs are not listed here: see the Workforce page for the evidence."
       >
         <div className="filter-row">
           <Segmented
@@ -207,8 +205,8 @@ export function Options({ shared }: { shared: Shared }) {
               <div>
                 <dt>Source and confidence</dt>
                 <dd>
-                  {openAction.explanation.source} · {openAction.explanation.confidence}{" "}
-                  <Badge kind="ESTIMATE" />
+                  {openAction.explanation.source === "observed" ? "Observed in 2021 postings" : "Planning assumption"} · confidence{" "}
+                  {openAction.explanation.confidence}
                 </dd>
               </div>
             </dl>

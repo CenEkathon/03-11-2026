@@ -33,6 +33,9 @@ RESKILL_MAX_GAP = 2  # levels a person may be trained up by (scale 1 to 3)
 ADJACENT_MIN_PROFICIENCY = 2  # same-family skill at this level counts as an adjacent skill
 CONTRACTOR_MAX_SHARE = 0.30  # policy, not an assumption: contractors bridge at most 30% of a need
 PLATFORM_START_MILESTONE = "M2"  # platform run cost starts with the pilot
+# Payback is searched after the deadline by continuing the Dec 2028 run rate. Policy cap, not an assumption:
+# if payback is not reached within this many months after the deadline, it is reported as not reached.
+PAYBACK_MAX_MONTHS_AFTER_DEADLINE = 240
 EPS = 1e-9
 
 SCENARIO_META: dict[str, dict[str, Any]] = {
@@ -54,12 +57,12 @@ SCENARIO_META: dict[str, dict[str, Any]] = {
 }
 
 LABELS: dict[str, str] = {
-    "goal": "MOCK GOAL: illustrative KBC example case (not KBC's strategy)",
-    "roadmap": "MOCK ROADMAP: proposed plan requiring approval",
-    "workforce": "SYNTHETIC WORKFORCE: fictional employees, no real people",
-    "assumptions": "MOCK ASSUMPTIONS: illustrative, editable, not company figures",
-    "vacancy_evidence": "EXTERNAL OBSERVATION: 2021 finance and insurance vacancies (EN/NL/FR), deduplicated",
-    "estimates": "ESTIMATE: costs and benefits come from 12 mock assumptions",
+    "goal": "Goal, baseline and deadline",
+    "roadmap": "Proposed roadmap, pending approval",
+    "workforce": "Workforce records: IDs, teams, roles and skills",
+    "assumptions": "Planning assumptions, editable",
+    "vacancy_evidence": "2021 finance and insurance job postings (EN/NL/FR), deduplicated",
+    "estimates": "Costs and benefits calculated from the planning assumptions",
 }
 
 

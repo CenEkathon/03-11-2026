@@ -1,21 +1,4 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
-import { badgeKind, BADGE_MEANING, type BadgeKind } from "../lib/labels";
-
-// ---------------------------------------------------------------- status
-
-/** Data-status badge: MOCK, SYNTHETIC, EXTERNAL or ESTIMATE. The meaning is in the title and the legend dialog. */
-export function Badge({ kind }: { kind: BadgeKind }) {
-  return (
-    <span className={`badge badge-${kind.toLowerCase()}`} title={BADGE_MEANING[kind]}>
-      {kind}
-    </span>
-  );
-}
-
-/** Badge for a response.labels key, e.g. "workforce" -> SYNTHETIC. */
-export function LabelBadge({ labelKey }: { labelKey: string }) {
-  return <Badge kind={badgeKind(labelKey)} />;
-}
 
 // ---------------------------------------------------------------- layout
 

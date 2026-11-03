@@ -5,7 +5,7 @@ import { SCENARIO_IDS } from "../api/types";
 import type { Controls, Shared } from "../appTypes";
 import { DISCLAIMER, SCENARIO_SHORT_LABEL, RECOMMENDED } from "../lib/labels";
 import { formatEur } from "../lib/format";
-import { Callout, Card, Segmented, LabelBadge } from "./ui";
+import { Callout, Card, Segmented } from "./ui";
 
 /** Drafted CEO brief. The numbers in it come from the engine, so it always matches the screens. */
 export function BriefPanel({ shared, controls }: { shared: Shared; controls: Controls }) {
@@ -39,7 +39,6 @@ export function BriefPanel({ shared, controls }: { shared: Shared; controls: Con
     <Card
       title="CEO brief"
       description="A short written summary of one option. The figures come from the model; the wording is drafted."
-      actions={<LabelBadge labelKey="estimates" />}
     >
       <div className="brief-controls">
         <Segmented

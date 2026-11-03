@@ -13,8 +13,24 @@ import type {
   ScenarioId,
   ScenarioResult,
   SensitivityRow,
+  Totals,
 } from "../api/types";
 import { formatEur, formatMonth } from "./format";
+
+/** Years the payback search can run past the deadline. Mirrors PAYBACK_MAX_MONTHS_AFTER_DEADLINE in backend config.py. */
+export const PAYBACK_LIMIT_YEARS = 20;
+
+/** Months up to and including the deadline. The series after it only exists to find payback. */
+export function deadlineMonths(monthly: MonthlyPoint[]): MonthlyPoint[] {
+  return monthly.filter((m) => !m.after_deadline);
+}
+
+/** Payback in a short label. Says so when it falls after the deadline. */
+export function paybackLabel(t: Totals): string {
+  if (t.payback_month === null) return "Not reached";
+  const when = formatMonth(t.payback_month);
+  return t.payback_within_deadline ? when : `${when} (after deadline)`;
+}
 
 // ---------------------------------------------------------------- AI adoption
 export interface AdoptionPoint {
@@ -23,7 +39,7 @@ export interface AdoptionPoint {
 }
 
 export function adoptionRows(monthly: MonthlyPoint[]): AdoptionPoint[] {
-  return monthly.map((m) => ({ month: m.month, share: m.adoption_share }));
+  return deadlineMonths(monthly).map((m) => ({ month: m.month, share: m.adoption_share }));
 }
 
 // ---------------------------------------------------------------- cumulative net by option
@@ -51,7 +67,7 @@ export interface CashRow {
 }
 
 export function cashRows(monthly: MonthlyPoint[]): CashRow[] {
-  return monthly.map((m) => ({
+  return deadlineMonths(monthly).map((m) => ({
     month: m.month,
     benefit: m.benefit_eur,
     cost: m.cost_one_off_eur + m.cost_recurring_eur,
@@ -67,7 +83,7 @@ export interface CoverageRow {
 }
 
 export function coverageRows(monthly: MonthlyPoint[]): CoverageRow[] {
-  return monthly.map((m) => ({ month: m.month, required: m.required_fte, staffed: m.staffed_fte }));
+  return deadlineMonths(monthly).map((m) => ({ month: m.month, required: m.required_fte, staffed: m.staffed_fte }));
 }
 
 // ---------------------------------------------------------------- where the FTE comes from
@@ -135,7 +151,7 @@ export interface GoalProgress {
 }
 
 export function goalProgress(goal: Goal, monthly: MonthlyPoint[], aiCostSaving: number): GoalProgress {
-  const shareAtDeadline = monthly.at(-1)?.adoption_share ?? 0;
+  const shareAtDeadline = deadlineMonths(monthly).at(-1)?.adoption_share ?? 0;
   const costBaseline = goal.baseline.cost_per_review_eur;
   const reductionTarget = goal.target.cost_per_review_reduction_pct;
   const reductionModelled = aiCostSaving * shareAtDeadline;
@@ -167,19 +183,27 @@ export function attentionItems(plan: PlanResponse, scenarioId: ScenarioId): Atte
   const t = result.totals;
   const items: Attention[] = [];
 
-  if (t.payback_month) {
+  if (t.payback_month && t.payback_within_deadline) {
     items.push({
       id: "payback",
       tone: "success",
       title: `Pays back by ${formatMonth(t.payback_month)}`,
       detail: "Cumulative net turns positive within the deadline.",
     });
+  } else if (t.payback_month) {
+    const n = t.payback_months_after_deadline ?? 0;
+    items.push({
+      id: "payback",
+      tone: "warning",
+      title: `Pays back ${n} month${n === 1 ? "" : "s"} after the deadline, in ${formatMonth(t.payback_month)}`,
+      detail: `Cumulative net is still negative at the deadline. Continuing the Dec 2028 run rate recovers the costs in ${formatMonth(t.payback_month)}.`,
+    });
   } else {
     items.push({
       id: "payback",
       tone: "warning",
-      title: "No payback before the deadline",
-      detail: `Cumulative net stays negative to the deadline. At the Dec 2028 run rate the option nets about ${formatEur(t.run_rate_net_eur_year)} a year (estimate, not a forecast).`,
+      title: `No payback within ${PAYBACK_LIMIT_YEARS} years`,
+      detail: `At the Dec 2028 run rate the option nets about ${formatEur(t.run_rate_net_eur_year)} a year. That does not recover the costs within ${PAYBACK_LIMIT_YEARS} years.`,
     });
   }
 

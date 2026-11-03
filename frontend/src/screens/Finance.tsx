@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
 import { CashChart, CumulativeChart } from "../charts/Charts";
 import { RangePlot } from "../charts/RangePlot";
-import { Callout, Card, ChartFigure, DataTable, Kpi, KpiRow, LabelBadge, PageHeader, Segmented, TableView, type Column } from "../components/ui";
+import { Callout, Card, ChartFigure, DataTable, Kpi, KpiRow, PageHeader, Segmented, TableView, type Column } from "../components/ui";
 import type { Shared } from "../appTypes";
 import { SCENARIO_IDS, type ScenarioId, type SensitivityRow, type Totals } from "../api/types";
 import { useChartTheme } from "../theme/ThemeProvider";
 import { formatEur, formatFte, formatMonth, formatPct } from "../lib/format";
 import { RECOMMENDED, SCENARIO_SHORT_LABEL, SCENARIO_SLOT } from "../lib/labels";
-import { benefitSpread, cashRows, cumulativeRows, rangeRows } from "../lib/viewModels";
+import { PAYBACK_LIMIT_YEARS, benefitSpread, cashRows, cumulativeRows, paybackLabel, rangeRows } from "../lib/viewModels";
 
 const CASE_ORDER = ["low", "base", "high"] as const;
 
@@ -43,8 +43,8 @@ export function Finance({ shared }: { shared: Shared }) {
     { key: "b", header: "Benefit to deadline", numeric: true, render: (r) => formatEur(r.t.benefit_eur) },
     { key: "n", header: "Net to deadline", numeric: true, render: (r) => formatEur(r.t.net_eur) },
     { key: "r", header: "ROI", numeric: true, render: (r) => formatPct(r.t.roi) },
-    { key: "p", header: "Payback by deadline", render: (r) => (r.t.payback_month ? formatMonth(r.t.payback_month) : "Not by deadline") },
-    { key: "rr", header: "Yearly net at Dec 2028 run rate (estimate)", numeric: true, render: (r) => formatEur(r.t.run_rate_net_eur_year) },
+    { key: "p", header: "Payback", render: (r) => paybackLabel(r.t) },
+    { key: "rr", header: "Yearly net at Dec 2028 run rate ", numeric: true, render: (r) => formatEur(r.t.run_rate_net_eur_year) },
   ];
 
   const sensColumns: Column<SensitivityRow>[] = [
@@ -77,7 +77,7 @@ export function Finance({ shared }: { shared: Shared }) {
     <>
       <PageHeader
         title="Money"
-        lead="Costs against benefits for each option, month by month, through the deadline. Benefit comes from fewer costly reviews. Costs come from the staffing actions. Everything is an estimate."
+        lead="Costs against benefits for each option, month by month, through the deadline. Benefit comes from fewer costly reviews. Costs come from the staffing actions."
         actions={
           <Segmented
             label="Option"
@@ -95,27 +95,39 @@ export function Finance({ shared }: { shared: Shared }) {
         <Kpi label="ROI to deadline" value={formatPct(t.roi)} tone={t.roi !== null && t.roi < 0 ? "bad" : "good"} />
         <Kpi
           label="Payback"
-          value={t.payback_month ? formatMonth(t.payback_month) : "Not by deadline"}
+          value={t.payback_month ? formatMonth(t.payback_month) : "Not reached"}
+          sub={
+            t.payback_within_deadline
+              ? "Within the deadline"
+              : t.payback_month
+                ? `${t.payback_months_after_deadline ?? 0} months after the deadline `
+                : `Not within ${PAYBACK_LIMIT_YEARS} years`
+          }
+          tone={t.payback_month && t.payback_within_deadline ? "good" : undefined}
         />
         <Kpi
           label="Yearly net at Dec 2028 run rate"
           value={formatEur(t.run_rate_net_eur_year)}
           tone={t.run_rate_net_eur_year < 0 ? "bad" : "good"}
-          sub="Estimate, not a forecast"
+          sub="Dec 2028 benefit minus recurring cost, × 12"
         />
       </KpiRow>
 
       {t.payback_month === null ? (
-        <Callout tone="warning" title={`${SCENARIO_SHORT_LABEL[scenario]} does not pay back before the deadline`}>
-          Costs are still above benefits at the deadline. The yearly run-rate figure shows what the option would net per year once the
-          December 2028 level continues. It is a simple estimate, not a forecast.
+        <Callout tone="warning" title={`${SCENARIO_SHORT_LABEL[scenario]} does not pay back within ${PAYBACK_LIMIT_YEARS} years`}>
+          Costs are still above benefits at the deadline. Even with the December 2028 run rate continued, the gap is not closed within
+          the model's {PAYBACK_LIMIT_YEARS}-year limit. The yearly run-rate figure shows what the option would net per year. It is a simple
+        </Callout>
+      ) : !t.payback_within_deadline ? (
+        <Callout tone="info" title={`${SCENARIO_SHORT_LABEL[scenario]} pays back ${t.payback_months_after_deadline ?? 0} months after the deadline`}>
+          Costs are above benefits at the deadline. Continuing the December 2028 run rate, with no new one-off costs and no new staffing,
+          recovers them in {formatMonth(t.payback_month)}.
         </Callout>
       ) : null}
 
       <Card
         title="Cumulative net, by option"
         description="Running total of benefit minus cost. Payback is where a line crosses zero. The recommended option is drawn thicker."
-        actions={<LabelBadge labelKey="estimates" />}
       >
         <ChartFigure
           label="Line chart of cumulative net value by month for each option. A zero line marks break-even."
@@ -140,7 +152,6 @@ export function Finance({ shared }: { shared: Shared }) {
         <Card
           title={`Monthly cost and benefit: ${SCENARIO_SHORT_LABEL[scenario]}`}
           description="Benefit above the line, cost below it. Both in EUR per month."
-          actions={<LabelBadge labelKey="estimates" />}
         >
           <ChartFigure
             label={`Column chart of monthly benefit above zero and monthly cost below zero for the ${SCENARIO_SHORT_LABEL[scenario]} option.`}
@@ -154,7 +165,6 @@ export function Finance({ shared }: { shared: Shared }) {
         <Card
           title="Net to deadline: low, base and high"
           description="Each bar is the range across the sensitivity cases. The dot is the base case. Low is the conservative case: higher cost, lower benefit."
-          actions={<LabelBadge labelKey="assumptions" />}
         >
           {ranges.length > 0 ? (
             <RangePlot rows={ranges} label={labelOf} color={colorOf} />
@@ -170,12 +180,11 @@ export function Finance({ shared }: { shared: Shared }) {
       <Card
         title="All options side by side"
         description="Totals through the deadline, from the same roadmap and assumptions."
-        actions={<LabelBadge labelKey="estimates" />}
       >
         <DataTable caption="Options compared" columns={compareColumns} rows={compareRows} rowKey={(r) => r.id} />
       </Card>
 
-      <Card title="How the numbers are built" description="Every figure traces back to one of these rules. The inputs are mock assumptions you can change on the Assumptions page.">
+      <Card title="How the numbers are built" description="Every figure traces back to one of these rules. The inputs are planning assumptions you can change on the Assumptions page.">
         <ul className="rules">
           <li>
             <strong>Benefit per month</strong> = reviews per month × AI-assisted share × coverage × cost per review × saving %. The
@@ -202,7 +211,7 @@ export function Finance({ shared }: { shared: Shared }) {
           </li>
           <li>
             <strong>Net</strong> = benefit − cost, per month and cumulative. <strong>ROI</strong> = (benefit − cost) ÷ cost.
-            <strong> Yearly net at run rate</strong> = (benefit − recurring cost in Dec 2028) × 12. An estimate, not a forecast.
+            <strong> Yearly net at run rate</strong> = (benefit − recurring cost in Dec 2028) × 12.
           </li>
           <li>
             <strong>Freed capacity</strong> is reported only as an aggregate FTE with an HR, legal and employee-representation review flag.
@@ -214,7 +223,11 @@ export function Finance({ shared }: { shared: Shared }) {
           <DataTable
             caption={`Monthly series, ${SCENARIO_SHORT_LABEL[scenario]}`}
             columns={[
-              { key: "m", header: "Month", render: (r: (typeof result.monthly)[number]) => formatMonth(r.month) },
+              {
+                key: "m",
+                header: "Month",
+                render: (r: (typeof result.monthly)[number]) => (r.after_deadline ? `${formatMonth(r.month)} (after deadline)` : formatMonth(r.month)),
+              },
               { key: "cum", header: "Cumulative net", numeric: true, render: (r) => formatEur(r.cumulative_net_eur) },
               { key: "adopt", header: "AI-assisted share", numeric: true, render: (r) => formatPct(r.adoption_share, 0) },
             ]}

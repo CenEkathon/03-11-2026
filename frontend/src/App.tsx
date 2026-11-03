@@ -204,7 +204,7 @@ function AnalyzingScreen({ input }: { input: IntakeInput | null }) {
 
   return (
     <>
-      <PageHeader title="Analysing your brief" lead="Mock analysis in progress. This is a simulated model call and takes about seven seconds." />
+      <PageHeader title="Analysing your brief" lead="Analysing the brief. This takes about seven seconds." />
       <div className="skeleton-page">
         <Card title="Working">
           <p className="analysis-splash" role="status" aria-live="polite">
@@ -241,7 +241,7 @@ function AnalyzingScreen({ input }: { input: IntakeInput | null }) {
 function LoadingSkeleton() {
   return (
     <div className="skeleton-page" role="status" aria-live="polite">
-      <span className="sr-only">Loading the mock plan from the API…</span>
+      <span className="sr-only">Loading the plan…</span>
       <Card title="Loading">
         <div className="skeleton-lines" aria-hidden="true">
           <span />

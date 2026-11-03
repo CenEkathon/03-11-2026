@@ -1,5 +1,5 @@
 import { useId, useState, type ChangeEvent, type FormEvent } from "react";
-import { Badge, Card, PageHeader } from "../components/ui";
+import { Card, PageHeader } from "../components/ui";
 import { SAMPLE_BRIEFS } from "../lib/sampleBriefs";
 import { summariseWorkerCsv, type WorkerCsvSummary } from "../lib/workerCsv";
 
@@ -65,8 +65,8 @@ export function Intake({ onSubmit }: Props) {
         title="Describe the goal and attach the workers"
         lead={
           <>
-            Add the context in your own words and attach the worker list as a CSV. The analysis step is mocked and takes about
-            seven seconds. Nothing is uploaded, and the plan still uses the synthetic workforce data.
+            Add the context in your own words and attach the worker list as a CSV. Analysis takes about seven
+            seconds. Nothing is uploaded.
           </>
         }
       />
@@ -75,7 +75,6 @@ export function Intake({ onSubmit }: Props) {
         <Card
           title="1. Your brief"
           description="Free text. For example, the goal, the teams involved and any constraints you want the plan to respect."
-          actions={<Badge kind="MOCK" />}
         >
           <div className="field">
             <div className="field-row">
@@ -105,7 +104,6 @@ export function Intake({ onSubmit }: Props) {
         <Card
           title="2. Workers (CSV)"
           description="Header row plus one row per worker. Only the column names and row count are read at this step."
-          actions={<Badge kind="SYNTHETIC" />}
         >
           <div className="field">
             <label htmlFor={fileId} className="field-label">

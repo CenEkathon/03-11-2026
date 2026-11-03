@@ -91,9 +91,12 @@ Twelve assumptions drive the money (`fixtures/assumptions.yaml`). Change costs a
 - **Benefit (monthly).** `reviews_per_year / 12 × adoption × coverage × cost_per_review × ai_cost_saving_pct`.
   - `coverage = min(1, staffed FTE / required FTE)` in that month.
   - This is the only benefit driver. Freed capacity is reported as an aggregate FTE and is not valued a second time.
-- **Totals.** `ROI = (benefit − cost) / cost`. Payback is the first month with cumulative net ≥ 0, counted from the first month that carries any cost. It is `None` if that does not happen before the deadline.
-- **Run-rate net per year.** `(benefit − recurring cost in the last month) × 12`. It assumes December 2028 continues for a year. It is a simple summary and not a forecast.
-- **Not modelled:** salary bands, loaded-cost factors, discounting (NPV) and any extrapolation past the deadline. These were removed to keep the demo explainable.
+- **Totals through the deadline.** `ROI = (benefit − cost) / cost`, summed over the 24 deadline months only.
+- **Payback.** The first month with cumulative net ≥ 0, counted from the first month that carries any cost. It may fall after the deadline.
+- **Payback after the deadline (2026-11-03 change).** If cumulative net is still negative at Dec 2028, each option continues at its Dec 2028 run rate: `benefit − recurring cost` of that month, repeated each month. One-off costs stop, and staffing is zero. The months needed are `k = ceil(−cumulative at deadline ÷ run rate)`, found in closed form (`finance.months_after_deadline_to_payback`). If the run rate is ≤ 0, or payback needs more than `PAYBACK_MAX_MONTHS_AFTER_DEADLINE` (240, a display cap of 20 years), payback is `None`.
+- **Shared length.** All options are extended to the same month count, the latest payback among them, so the cumulative chart lines up by index. Scenarios that pay back earlier show the same run rate after payback.
+- **Run-rate net per year.** `(benefit − recurring cost in Dec 2028) × 12`. It is a simple summary and not a forecast.
+- **Not modelled:** salary bands, loaded-cost factors, discounting (NPV), inflation, and any change to the run rate after the deadline (platform renewal, pay rises, adoption above 60%). These were removed to keep the demo explainable.
 
 ### 2.6 Sensitivity
 - Each assumption has `low` (conservative), `base` and `high` (optimistic) values in `fixtures/assumptions.yaml`.
@@ -123,7 +126,7 @@ Twelve assumptions drive the money (`fixtures/assumptions.yaml`). Change costs a
 | 5 | Evidence keyed by job family | Keyed by skill, family and country | Family is derived from the taxonomy. A job-family classifier is out of scope |
 | 6 | Update `spec.md` | `spec.md` was deleted in the working tree before this work, so it was **not** recreated. The spec is in `docs/PRODUCT_SPEC.md` | Avoids recreating a file you removed. Tell us if you want it back |
 | 7 | Narrative live by default | Live is opt-in | Keeps the shared quota safe. A smoke test made one unintended live call, which is logged in `usage.jsonl` |
-| 8 | 300 employees, 8 teams, 23 assumptions, salary bands, NPV, 60-month extension | About 60 employees, 5 teams, 12 assumptions, one yearly cost per person, no NPV or extension, one run-rate figure | The team could not explain the earlier model without economics background. Data was simplified; the structure (scenarios, ledger, planner) is unchanged |
+| 8 | 300 employees, 8 teams, 23 assumptions, salary bands, NPV, 60-month extension | About 60 employees, 5 teams, 12 assumptions, one yearly cost per person, no NPV. Payback is searched past the deadline by continuing the Dec 2028 run rate (cap 20 years), without a fixed extension | The team could not explain the earlier model without economics background. Data was simplified. The payback extension was requested on 2026-11-03 so the CEO sees when the investment is returned. The structure (scenarios, ledger, planner) is unchanged |
 
 ## 6. Open items
 - The ETL and skill-mapper outputs (S1) are described in §7 once they land.

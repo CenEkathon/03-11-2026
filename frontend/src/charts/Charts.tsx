@@ -252,8 +252,8 @@ export function CashChart({ rows }: { rows: CashRow[] }) {
           )}
         />
         <Legend iconType="square" formatter={legendText(chrome.inkSecondary)} wrapperStyle={{ fontSize: 13, paddingTop: 8 }} />
-        <Bar dataKey="benefit" name="Benefit (estimate)" stackId="cash" fill={series[0]} maxBarSize={18} />
-        <Bar dataKey="cost" name="Cost (estimate)" stackId="cash" fill={series[1]} maxBarSize={18} />
+        <Bar dataKey="benefit" name="Benefit" stackId="cash" fill={series[0]} maxBarSize={18} />
+        <Bar dataKey="cost" name="Cost" stackId="cash" fill={series[1]} maxBarSize={18} />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -295,7 +295,7 @@ export function NetByOptionChart({ rows }: { rows: OptionBar[] }) {
           cursor={{ fill: chrome.grid, fillOpacity: 0.5 }}
           content={(p) => <ChartTooltip {...p} keyShape="box" format={(v) => formatEur(v)} />}
         />
-        <Bar dataKey="value" name="Net to deadline (estimate)" maxBarSize={24}>
+        <Bar dataKey="value" name="Net to deadline" maxBarSize={24}>
           {rows.map((r) => (
             <Cell key={r.id} fill={r.color} />
           ))}

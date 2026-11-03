@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "label": "MOCK DEMAND - roles, FTE and minimum levels are assumptions for the demo. Skill ids come from taxonomy.json.",
+    "label": "Roles, FTE and minimum levels by requirement. Skill ids come from taxonomy.json.",
     "level_scale": "1 basic, 2 working, 3 expert",
     "window_rule": "Each requirement needs its FTE in every month of its milestone."
   },

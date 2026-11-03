@@ -453,6 +453,11 @@ export interface components {
             cumulative_net_eur: number;
             /** Freed Capacity Fte Aggregate */
             freed_capacity_fte_aggregate: number;
+            /**
+             * After Deadline
+             * @default false
+             */
+            after_deadline: boolean;
         };
         /** PlanRequest */
         PlanRequest: {
@@ -627,6 +632,10 @@ export interface components {
             roi: number | null;
             /** Payback Month */
             payback_month: string | null;
+            /** Payback Within Deadline */
+            payback_within_deadline: boolean;
+            /** Payback Months After Deadline */
+            payback_months_after_deadline: number | null;
             /** Run Rate Net Eur Year */
             run_rate_net_eur_year: number;
             /** Unmet Fte Months */

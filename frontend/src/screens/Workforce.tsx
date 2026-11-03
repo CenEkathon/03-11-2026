@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { CoverageChart } from "../charts/Charts";
-import { Callout, Card, ChartFigure, Dialog, DataTable, LabelBadge, PageHeader, Segmented, type Column } from "../components/ui";
+import { Callout, Card, ChartFigure, Dialog, DataTable, PageHeader, Segmented, type Column } from "../components/ui";
 import type { Shared } from "../appTypes";
 import { SCENARIO_IDS, type Requirement, type ScenarioId, type SkillFit } from "../api/types";
 import { formatFte, formatMonth, formatMonthRange } from "../lib/format";
@@ -23,7 +23,7 @@ export function Workforce({ shared }: { shared: Shared }) {
   const evidenceFit = evidenceReq ? fitById.get(evidenceReq.id) : undefined;
 
   const columns: Column<Requirement>[] = [
-    { key: "role", header: "Role (mock)", render: (r) => r.role },
+    { key: "role", header: "Role", render: (r) => r.role },
     { key: "skill", header: "Skill", render: (r) => skillLabels[r.skill_id] ?? r.skill_id },
     { key: "level", header: "Min level", numeric: true, render: (r) => LEVEL_NAMES[r.min_proficiency] ?? `${r.min_proficiency} of 3` },
     { key: "fte", header: "FTE", numeric: true, render: (r) => formatFte(r.fte) },
@@ -82,7 +82,6 @@ export function Workforce({ shared }: { shared: Shared }) {
       <Card
         title="Choose a milestone"
         description={`${milestone.name}: ${formatMonthRange(milestone.start, milestone.end)}. Owner team: ${teamName[milestone.owner_team] ?? milestone.owner_team}.`}
-        actions={<LabelBadge labelKey="workforce" />}
       >
         <Segmented
           label="Milestone"
@@ -95,7 +94,6 @@ export function Workforce({ shared }: { shared: Shared }) {
       <Card
         title="Required and staffed FTE, all milestones"
         description={`${SCENARIO_SHORT_LABEL[scenario]} option. The shaded band is ${milestone.id}.`}
-        actions={<LabelBadge labelKey="workforce" />}
       >
         <ChartFigure
           label={`Area and line chart of required FTE against staffed FTE by month for the ${SCENARIO_SHORT_LABEL[scenario]} option. ${milestone.id} is shaded.`}
@@ -121,7 +119,6 @@ export function Workforce({ shared }: { shared: Shared }) {
       <Card
         title={`Requirements in ${milestone.id}`}
         description="Eligible counts are people in contributing teams who already meet the minimum level. They are counts, not a ranking, and no one is selected."
-        actions={<LabelBadge labelKey="workforce" />}
       >
         <div className="stack">
           {shortfalls.length === 0 ? (
@@ -174,12 +171,12 @@ export function Workforce({ shared }: { shared: Shared }) {
                 <dd>
                   {evidenceFit.vacancy_evidence_share === null
                     ? "Not observed"
-                    : `${Math.round(evidenceFit.vacancy_evidence_share * 100)}% of deduplicated postings (external, not used in the arithmetic)`}
+                    : `${Math.round(evidenceFit.vacancy_evidence_share * 100)}% of deduplicated postings (2021, not used in the arithmetic)`}
                 </dd>
               </div>
             </dl>
             <div>
-              <h3>Sample employee IDs (synthetic, up to 5)</h3>
+              <h3>Sample employee IDs (up to 5)</h3>
               <p className="muted small">IDs are evidence for the count only. They are not a ranking and do not select anyone.</p>
               {(evidenceFit.evidence_employee_ids ?? []).length ? (
                 <ul className="id-list">

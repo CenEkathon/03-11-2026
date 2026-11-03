@@ -1,9 +1,9 @@
 {
   "_meta": {
-    "label": "MOCK ROADMAP - 4 steps, a proposed plan requiring approval. Not generated from a real CEO strategy.",
+    "label": "Proposed roadmap: four steps, pending approval.",
     "dependency_rule": "Each step starts the month after the previous one ends.",
     "adoption_rule": "The AI-assisted share reaches the step's target at the end of the step and rises in a straight line from the previous target.",
-    "change_cost_rule": "change_cost_eur is a mock one-off budget for the step, spread evenly over its months."
+    "change_cost_rule": "change_cost_eur is a one-off budget for the step, spread evenly over its months."
   },
   "milestones": [
     {

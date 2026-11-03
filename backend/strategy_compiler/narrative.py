@@ -25,10 +25,9 @@ CACHE_DIR = Path(__file__).resolve().parents[1] / ".cache" / "narrative"
 USAGE_LOG = Path(__file__).resolve().parents[1] / ".cache" / "usage.jsonl"
 
 SYSTEM_PROMPT = (
-    "You write a short executive brief for a CEO. Everything is MOCK: the bank is fictional, "
-    "the goal, roadmap, workforce and figures are demo inputs, and costs are estimates. "
+    "You write a short executive brief for a CEO. "
     "Use only the numbers in the JSON you are given. Do not compute, round differently or invent figures. "
-    "Mention that the figures are mock estimates. Never recommend dismissing or ranking any individual. "
+    "Never recommend dismissing or ranking any individual. "
     "Surplus capacity is only ever an aggregate FTE and must be sent to HR, legal and employee-representation review. "
     "Write at most 220 words in plain English, with 3 short bullet points and one decision request."
 )
@@ -88,7 +87,7 @@ def _template(facts: dict[str, Any]) -> str:
     scen = facts["scenario"]["label"]
     payback = t["payback_month_within_deadline"] or "not within the deadline"
     lines = [
-        f"MOCK BRIEF - {scen} (case: {facts['case']}). All figures are mock estimates for a fictional bank.",
+        f"Brief - {scen} (case: {facts['case']}). Figures come from the planning assumptions.",
         "",
         f"- Programme cost through the deadline: {_eur(t['cost_total_eur'])} "
         f"(one-off {_eur(t['cost_one_off_eur'])}, recurring {_eur(t['cost_recurring_eur'])}).",

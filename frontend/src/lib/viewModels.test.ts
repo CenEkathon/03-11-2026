@@ -19,7 +19,9 @@ import {
   attentionItems,
   cashRows,
   cumulativeRows,
+  deadlineMonths,
   goalProgress,
+  paybackLabel,
   rangeRows,
 } from "./viewModels";
 import { rowErrors, checkDraft } from "./roadmap";
@@ -36,6 +38,7 @@ function point(month: string, o: Partial<MonthlyPoint> = {}): MonthlyPoint {
     cost_recurring_eur: 0,
     net_eur: 0,
     cumulative_net_eur: 0,
+    after_deadline: false,
     freed_capacity_fte_aggregate: 0,
     ...o,
   };
@@ -50,6 +53,8 @@ function totals(o: Partial<Totals> = {}): Totals {
     net_eur: -30,
     roi: -0.2,
     payback_month: null,
+    payback_within_deadline: false,
+    payback_months_after_deadline: null,
     unmet_fte_months: 0,
     freed_capacity_fte_peak: 0,
     freed_capacity_flag: "HR / legal / employee-representation review required",
@@ -177,17 +182,50 @@ describe("attention points", () => {
       scenarios: { hybrid: { ...scenario("hybrid", [], t), shortfalls } },
     }) as unknown as PlanResponse;
 
-  it("warns when there is no payback before the deadline and points to the run-rate estimate", () => {
-    const items = attentionItems(plan({ payback_month: null, run_rate_net_eur_year: 400000 }), "hybrid");
+  it("warns when payback is not reached within the limit and points to the run rate", () => {
+    const items = attentionItems(
+      plan({ payback_month: null, payback_within_deadline: false, payback_months_after_deadline: null, run_rate_net_eur_year: 400000 }),
+      "hybrid",
+    );
     const payback = items.find((i) => i.id === "payback");
     expect(payback?.tone).toBe("warning");
     expect(payback?.detail).toContain("run rate");
-    expect(payback?.detail).toContain("not a forecast");
   });
 
   it("reports payback as a success when it falls within the deadline", () => {
-    const items = attentionItems(plan({ payback_month: "2028-03" }), "hybrid");
+    const items = attentionItems(plan({ payback_month: "2028-03", payback_within_deadline: true, payback_months_after_deadline: 0 }), "hybrid");
     expect(items.find((i) => i.id === "payback")?.tone).toBe("success");
+  });
+
+  it("states the months after the deadline when payback falls later, ", () => {
+    const items = attentionItems(
+      plan({ payback_month: "2029-02", payback_within_deadline: false, payback_months_after_deadline: 2, run_rate_net_eur_year: 1315600 }),
+      "hybrid",
+    );
+    const payback = items.find((i) => i.id === "payback");
+    expect(payback?.title).toContain("2 months after the deadline");
+    expect(payback?.title).toContain("Feb 2029");
+  });
+
+  it("keeps only deadline months for the deadline charts and goal progress", () => {
+    const monthly = [
+      point("2028-11", { adoption_share: 0.5 }),
+      point("2028-12", { adoption_share: 0.6 }),
+      point("2029-01", { adoption_share: 0.6, after_deadline: true }),
+    ];
+    expect(deadlineMonths(monthly).map((m) => m.month)).toEqual(["2028-11", "2028-12"]);
+    expect(adoptionRows(monthly).map((r) => r.month)).toEqual(["2028-11", "2028-12"]);
+    const localGoal = {
+      baseline: { cost_per_review_eur: 48 },
+      target: { ai_assisted_share: 0.6, cost_per_review_reduction_pct: 0.35 },
+    } as unknown as Goal;
+    expect(goalProgress(localGoal, monthly, 0.35).shareAtDeadline).toBe(0.6);
+  });
+
+  it("labels payback inside, after and not reached", () => {
+    expect(paybackLabel({ payback_month: "2028-03", payback_within_deadline: true } as Totals)).toBe("Mar 2028");
+    expect(paybackLabel({ payback_month: "2029-02", payback_within_deadline: false } as Totals)).toBe("Feb 2029 (after deadline)");
+    expect(paybackLabel({ payback_month: null, payback_within_deadline: false } as Totals)).toBe("Not reached");
   });
 
   it("states freed capacity only as an aggregate with the review flag", () => {

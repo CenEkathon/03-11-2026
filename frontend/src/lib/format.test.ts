@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { formatCount, formatEur, formatEurCompact, formatFte, formatMonth, formatMonthRange, formatPct } from "./format";
-import { badgeKind, SCENARIO_SLOT } from "./labels";
+import { SCENARIO_SLOT } from "./labels";
 
 describe("formatEur", () => {
   it("shows whole euros with a thousands separator", () => {
@@ -56,14 +56,7 @@ describe("month labels", () => {
   });
 });
 
-describe("badge and scenario helpers", () => {
-  it("maps label keys to badge kinds and defaults unknown keys to MOCK", () => {
-    expect(badgeKind("workforce")).toBe("SYNTHETIC");
-    expect(badgeKind("vacancy_evidence")).toBe("EXTERNAL");
-    expect(badgeKind("estimates")).toBe("ESTIMATE");
-    expect(badgeKind("something_new")).toBe("MOCK");
-  });
-
+describe("scenario helpers", () => {
   it("gives each scenario a fixed colour slot", () => {
     expect(new Set(Object.values(SCENARIO_SLOT)).size).toBe(3);
     expect(SCENARIO_SLOT.hybrid).toBe(2);

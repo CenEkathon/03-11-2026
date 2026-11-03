@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Timeline, type TimelineRow } from "../charts/Timeline";
-import { Callout, Card, LabelBadge, PageHeader } from "../components/ui";
+import { Callout, Card, PageHeader } from "../components/ui";
 import type { Controls, Shared } from "../appTypes";
 import type { Milestone } from "../api/types";
 import { formatMetricTarget, formatMonth } from "../lib/format";
@@ -94,7 +94,6 @@ export function Roadmap({ shared, controls }: { shared: Shared; controls: Contro
       <PageHeader
         title="Roadmap"
         lead="Six milestones, each starting after the one before it ends. Change a start or end month and the timeline updates. Apply to recalculate costs and workforce needs."
-        actions={<LabelBadge labelKey="roadmap" />}
       />
 
       <Card

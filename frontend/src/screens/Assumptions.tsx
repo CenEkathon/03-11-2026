@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Callout, Card, DataTable, LabelBadge, PageHeader, type Column } from "../components/ui";
+import { Callout, Card, DataTable, PageHeader, type Column } from "../components/ui";
 import type { Controls, Shared } from "../appTypes";
 import type { AssumptionRow } from "../api/types";
 import { formatByUnit } from "../lib/format";
@@ -81,8 +81,7 @@ export function Assumptions({ shared, controls }: { shared: Shared; controls: Co
     <>
       <PageHeader
         title="Assumptions"
-        lead="The inputs behind every cost and benefit. All of them are mock. Change a base value and the whole demo recalculates. Changes are not saved on the server."
-        actions={<LabelBadge labelKey="assumptions" />}
+        lead="The inputs behind every cost and benefit. Change a base value and the whole demo recalculates. Changes are not saved on the server."
       />
 
       <Callout tone="info" title="How to read this table">
@@ -92,7 +91,7 @@ export function Assumptions({ shared, controls }: { shared: Shared; controls: Co
 
       <Card
         title="Inputs"
-        description={`${activeOverrides} base value${activeOverrides === 1 ? "" : "s"} overridden. Leave a field empty to keep the mock base.`}
+        description={`${activeOverrides} base value${activeOverrides === 1 ? "" : "s"} overridden. Leave a field empty to keep the base value.`}
         actions={
           <div className="action-bar action-bar-inline">
             <button type="button" className="btn btn-primary" onClick={apply} disabled={busy}>

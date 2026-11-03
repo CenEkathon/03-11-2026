@@ -37,10 +37,18 @@ from .contracts import (
     Totals,
 )
 from .demand import expand_requirements, skill_fit
-from .finance import ONE_OFF, Book, CostItem, build_book
+from .finance import (
+    ONE_OFF,
+    Book,
+    CostItem,
+    build_book,
+    extend_for_payback,
+    first_cost_index,
+    payback_index,
+)
 from .planner import Allocation, RawScenario, run_scenario
 from .roadmap import RoadmapError, adoption_by_month, apply_dates, validate_roadmap
-from .timeline import month_range, parse_month
+from .timeline import format_month, month_range, parse_month
 
 SCENARIO_IDS: tuple[ScenarioId, ...] = ("reskill_led", "hire_led", "hybrid")
 
@@ -76,10 +84,17 @@ def compute_plan(req: PlanRequest) -> PlanResponse:
     evidence = load_vacancy_evidence()
 
     scenario_ids = req.scenarios or list(SCENARIO_IDS)
-    scenarios: dict[ScenarioId, ScenarioResult] = {}
+    raws: dict[ScenarioId, RawScenario] = {}
+    books: dict[ScenarioId, Book] = {}
     for sid in scenario_ids:
-        raw = run_scenario(sid, requirements, employees, contributing, families, a, horizon)
-        scenarios[sid] = _scenario_result(sid, raw, requirements, milestones, a, goal, adoption, horizon)
+        raws[sid] = run_scenario(sid, requirements, employees, contributing, families, a, horizon)
+        books[sid] = build_book(raws[sid], a, goal, milestones, requirements, adoption, horizon)
+    # Payback may fall after the deadline. The run rate continues until it is reached (see finance.py).
+    books = extend_for_payback(books)
+    scenarios: dict[ScenarioId, ScenarioResult] = {
+        sid: _scenario_result(sid, raws[sid], books[sid], requirements, milestones, a)
+        for sid in scenario_ids
+    }
 
     fits = [skill_fit(r, employees, contributing, families, evidence) for r in requirements]
     return PlanResponse(
@@ -118,14 +133,11 @@ def run_sensitivity(req: PlanRequest) -> list[SensitivityRow]:
 def _scenario_result(
     sid: ScenarioId,
     raw: RawScenario,
+    book: Book,
     requirements: list[Requirement],
     milestones: list[Milestone],
     a: dict[str, float],
-    goal: Goal,
-    adoption: dict[str, float],
-    horizon: list[str],
 ) -> ScenarioResult:
-    book = build_book(raw, a, goal, milestones, requirements, adoption, horizon)
     meta = SCENARIO_META[sid]
     return ScenarioResult(
         scenario=sid,
@@ -156,20 +168,24 @@ def _monthly(book: Book) -> list[MonthlyPoint]:
                 net_eur=book.net[i],
                 cumulative_net_eur=cumulative,
                 freed_capacity_fte_aggregate=book.freed_fte[i],
+                after_deadline=i >= book.horizon_len,
             )
         )
     return points
 
 
 def _totals(book: Book, raw: RawScenario) -> Totals:
-    cost_one = sum(book.one_off)
-    cost_rec = sum(book.recurring)
+    """Deadline totals sum only the horizon months. Payback may lie after the deadline."""
+    h = book.horizon_len
+    cost_one = sum(book.one_off[:h])
+    cost_rec = sum(book.recurring[:h])
     cost_total = cost_one + cost_rec
-    benefit = sum(book.benefit)
+    benefit = sum(book.benefit[:h])
     net = benefit - cost_total
 
-    first_cost = next((i for i, (o, r) in enumerate(zip(book.one_off, book.recurring, strict=True)) if o + r > EPS), None)
-    payback = _payback(book.months, book.net, first_cost)
+    idx = payback_index(book.net, first_cost_index(book))
+    payback_month = format_month(parse_month(book.months[0]) + idx) if idx is not None else None
+    after = max(0, idx - (h - 1)) if idx is not None else None
 
     return Totals(
         cost_one_off_eur=cost_one,
@@ -178,23 +194,13 @@ def _totals(book: Book, raw: RawScenario) -> Totals:
         benefit_eur=benefit,
         net_eur=net,
         roi=(net / cost_total) if cost_total > EPS else None,
-        payback_month=payback,
-        run_rate_net_eur_year=(book.benefit[-1] - book.recurring[-1]) * 12 if book.months else 0.0,
+        payback_month=payback_month,
+        payback_within_deadline=idx is not None and idx < h,
+        payback_months_after_deadline=after,
+        run_rate_net_eur_year=book.run_rate_net * 12 if h else 0.0,
         unmet_fte_months=sum(u.unmet_fte for u in raw.unmet),
-        freed_capacity_fte_peak=max(book.freed_fte) if book.freed_fte else 0.0,
+        freed_capacity_fte_peak=max(book.freed_fte[:h]) if h else 0.0,
     )
-
-
-def _payback(months: list[str], net: list[float], first_cost: int | None) -> str | None:
-    """First month where cumulative net is >= 0, counting only from the first month that has any cost."""
-    if first_cost is None:
-        return None
-    cumulative = 0.0
-    for i, month in enumerate(months):
-        cumulative += net[i]
-        if i >= first_cost and cumulative >= 0:
-            return month
-    return None
 
 
 def _actions(
