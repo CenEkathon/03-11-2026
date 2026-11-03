@@ -274,8 +274,8 @@ function actionLines(id: ScenarioId): ActionLine[] {
   const lines: ActionLine[] = [
     { ...base, id: `${id}-a1`, type: "reskill", people_count: 4, fte: 4, one_off_cost_eur: 12000, recurring_cost_eur: 0, skills_gained: ["kyc"], employee_ids: ["EMP-0003"] },
     { ...base, id: `${id}-a2`, type: "redeploy", people_count: 2, fte: 2, one_off_cost_eur: 1000, recurring_cost_eur: 0 },
-    { ...base, id: `${id}-a3`, type: "hire", people_count: 1, fte: 1, one_off_cost_eur: 3000, recurring_cost_eur: 8000, milestone_id: "M2", requirement_id: "R03", start: "2027-07", depends_on: ["M1"] },
-    { ...base, id: `${id}-a4`, type: "external", people_count: 1, fte: 0.5, one_off_cost_eur: 0, recurring_cost_eur: 2000, milestone_id: "M3", requirement_id: "R04", start: "2028-01" },
+    { ...base, id: `${id}-a3`, type: "hire", people_count: 1, fte: 1, one_off_cost_eur: 3000, recurring_cost_eur: 8000, milestone_id: "M2", requirement_id: "R03", skill_id: "model_validation", start: "2027-07", depends_on: ["M1"] },
+    { ...base, id: `${id}-a4`, type: "external", people_count: 1, fte: 0.5, one_off_cost_eur: 0, recurring_cost_eur: 2000, milestone_id: "M3", requirement_id: "R04", skill_id: "kyc", start: "2028-01" },
   ];
   return lines;
 }
