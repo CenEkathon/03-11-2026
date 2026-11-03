@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { BriefPanel } from "./BriefPanel";
 import { api } from "../api/client";
 import type { BriefResponse } from "../api/types";
 import { makeControls, makePlan, makeShared } from "../test/fixtures";
 import { DISCLAIMER } from "../lib/labels";
 import { formatEur } from "../lib/format";
+import { renderWithTheme } from "../test/render";
 
 vi.mock("../api/client", () => ({
   api: { brief: vi.fn() },
@@ -32,7 +33,7 @@ beforeEach(() => {
 
 describe("BriefPanel", () => {
   it("starts on the recommended option with the cost and net shown for it", () => {
-    render(<BriefPanel shared={makeShared()} controls={makeControls()} />);
+    renderWithTheme(<BriefPanel shared={makeShared()} controls={makeControls()} />);
     const hybrid = makePlan().scenarios.hybrid.totals;
     expect(screen.getByText(`Cost to deadline ${formatEur(hybrid.cost_total_eur)} · net ${formatEur(hybrid.net_eur)}`)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Draft brief" })).toBeTruthy();
@@ -42,7 +43,7 @@ describe("BriefPanel", () => {
   it("shows no cost line when the chosen option is missing from the plan", () => {
     const plan = makePlan();
     delete (plan.scenarios as Partial<typeof plan.scenarios>).hybrid;
-    render(<BriefPanel shared={makeShared({ plan })} controls={makeControls()} />);
+    renderWithTheme(<BriefPanel shared={makeShared({ plan })} controls={makeControls()} />);
     expect(screen.queryByText(/Cost to deadline/)).toBeNull();
   });
 
@@ -61,7 +62,7 @@ describe("BriefPanel", () => {
       dates: { M1: { start: "2027-02", end: "2027-06" } },
       overrides: { hire_cost: 4000 },
     });
-    render(<BriefPanel shared={makeShared()} controls={controls} />);
+    renderWithTheme(<BriefPanel shared={makeShared()} controls={controls} />);
 
     expect(screen.getByText("The brief uses your current timing and assumption edits.")).toBeTruthy();
 
@@ -72,6 +73,7 @@ describe("BriefPanel", () => {
     const article = await screen.findByRole("article", { name: "Drafted brief" });
     expect(briefMock).toHaveBeenCalledWith({
       scenario: "hire_led",
+      lang: "en",
       case: "high",
       milestone_dates: { M1: { start: "2027-02", end: "2027-06" } },
       assumption_overrides: { hire_cost: 4000 },
@@ -87,12 +89,13 @@ describe("BriefPanel", () => {
 
   it("sends null edits when nothing has been changed and omits the metadata it does not have", async () => {
     briefMock.mockResolvedValue(briefResponse());
-    render(<BriefPanel shared={makeShared()} controls={makeControls()} />);
+    renderWithTheme(<BriefPanel shared={makeShared()} controls={makeControls()} />);
     fireEvent.click(screen.getByRole("button", { name: "Draft brief" }));
 
     const article = await screen.findByRole("article", { name: "Drafted brief" });
     expect(briefMock).toHaveBeenCalledWith({
       scenario: "hybrid",
+      lang: "en",
       case: "base",
       milestone_dates: null,
       assumption_overrides: null,
@@ -106,7 +109,7 @@ describe("BriefPanel", () => {
 
   it("shows the reason when drafting fails, and a generic message for anything that is not an Error", async () => {
     briefMock.mockRejectedValueOnce(new Error("Backend is down"));
-    render(<BriefPanel shared={makeShared()} controls={makeControls()} />);
+    renderWithTheme(<BriefPanel shared={makeShared()} controls={makeControls()} />);
     fireEvent.click(screen.getByRole("button", { name: "Draft brief" }));
     expect(await screen.findByText("Backend is down")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Draft brief" })).toBeTruthy();

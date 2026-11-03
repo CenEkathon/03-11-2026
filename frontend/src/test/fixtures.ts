@@ -29,7 +29,7 @@ export const MONTHS: string[] = (() => {
 })();
 
 export const GOAL: Goal = {
-  title: "MOCK GOAL: AI-assisted KYC and AML reviews",
+  title: "AI-assisted KYC reviews",
   company_id: "mock_company",
   statement: "Mock statement for the demo. Not a real strategy.",
   baseline: { reviews_per_year: 240000, cost_per_review_eur: 48, ai_assisted_share: 0 },
@@ -220,6 +220,7 @@ export function monthlyFor(id: ScenarioId): MonthlyPoint[] {
       net_eur: net,
       cumulative_net_eur: cumulative,
       freed_capacity_fte_aggregate: id === "reskill_led" ? 2 : 0,
+      after_deadline: false,
     };
   });
 }
@@ -240,6 +241,8 @@ function totalsFor(monthly: MonthlyPoint[], freedPeak: number): Totals {
     net_eur: net,
     roi: total === 0 ? null : net / total,
     payback_month: payback,
+    payback_within_deadline: payback !== null,
+    payback_months_after_deadline: null,
     unmet_fte_months: 0,
     freed_capacity_fte_peak: freedPeak,
     freed_capacity_flag: "HR / legal / employee-representation review required",

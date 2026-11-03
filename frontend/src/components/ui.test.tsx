@@ -1,8 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { BADGE_MEANING } from "../lib/labels";
+import { fireEvent, screen, within } from "@testing-library/react";
 import {
-  Badge,
   Callout,
   Card,
   ChartFigure,
@@ -10,37 +8,23 @@ import {
   Dialog,
   Kpi,
   KpiRow,
-  LabelBadge,
   PageHeader,
   Segmented,
   TableView,
   type Column,
 } from "./ui";
-
-describe("Badge and LabelBadge", () => {
-  it("shows the kind with its meaning as the tooltip and a kind class", () => {
-    render(<Badge kind="SYNTHETIC" />);
-    const badge = screen.getByText("SYNTHETIC");
-    expect(badge.className).toBe("badge badge-synthetic");
-    expect(badge.getAttribute("title")).toBe(BADGE_MEANING.SYNTHETIC);
-  });
-
-  it("maps a response label key to its badge kind", () => {
-    render(<LabelBadge labelKey="vacancy_evidence" />);
-    expect(screen.getByText("EXTERNAL")).toBeTruthy();
-  });
-});
+import { renderWithTheme } from "../test/render";
 
 describe("PageHeader", () => {
   it("renders the title, an optional lead and optional actions", () => {
-    const { container } = render(<PageHeader title="Overview" lead="Summary" actions={<button type="button">Export</button>} />);
+    const { container } = renderWithTheme(<PageHeader title="Overview" lead="Summary" actions={<button type="button">Export</button>} />);
     expect(screen.getByRole("heading", { level: 1, name: "Overview" })).toBeTruthy();
     expect(screen.getByText("Summary").className).toBe("lead");
     expect(container.querySelector(".page-head-actions")).not.toBeNull();
   });
 
   it("omits the lead and actions wrappers when they are not given", () => {
-    const { container } = render(<PageHeader title="Bare" />);
+    const { container } = renderWithTheme(<PageHeader title="Bare" />);
     expect(container.querySelector(".lead")).toBeNull();
     expect(container.querySelector(".page-head-actions")).toBeNull();
   });
@@ -48,7 +32,7 @@ describe("PageHeader", () => {
 
 describe("Card", () => {
   it("names the section after its heading and shows the optional parts", () => {
-    render(
+    renderWithTheme(
       <Card title="Net value" description="Estimate" actions={<button type="button">Help</button>} className="wide" id="net">
         <p>Body text</p>
       </Card>,
@@ -62,7 +46,7 @@ describe("Card", () => {
   });
 
   it("renders without a description, actions or extra class", () => {
-    const { container } = render(<Card title="Plain">x</Card>);
+    const { container } = renderWithTheme(<Card title="Plain">x</Card>);
     expect(container.querySelector(".card")?.className).toBe("card");
     expect(container.querySelector(".card-desc")).toBeNull();
     expect(container.querySelector(".card-actions")).toBeNull();
@@ -71,7 +55,7 @@ describe("Card", () => {
 
 describe("Kpi and KpiRow", () => {
   it("shows the label, value, tone and optional sub line", () => {
-    render(
+    renderWithTheme(
       <KpiRow>
         <Kpi label="Net" value="-EUR 5" tone="bad" sub="Estimate" />
       </KpiRow>,
@@ -82,7 +66,7 @@ describe("Kpi and KpiRow", () => {
   });
 
   it("has no tone class or sub line when they are omitted", () => {
-    const { container } = render(<Kpi label="Cost" value="EUR 1" />);
+    const { container } = renderWithTheme(<Kpi label="Cost" value="EUR 1" />);
     expect(container.querySelector(".kpi-value")?.className).toBe("kpi-value");
     expect(container.querySelector(".kpi-sub")).toBeNull();
   });
@@ -90,7 +74,7 @@ describe("Kpi and KpiRow", () => {
 
 describe("Callout", () => {
   it("is an alert for critical callouts and a status message otherwise", () => {
-    const { rerender } = render(<Callout tone="critical" title="Failed">Details</Callout>);
+    const { rerender } = renderWithTheme(<Callout tone="critical" title="Failed">Details</Callout>);
     expect(screen.getByRole("alert").className).toBe("callout callout-critical");
 
     rerender(<Callout tone="success" title="Done">Details</Callout>);
@@ -98,7 +82,7 @@ describe("Callout", () => {
   });
 
   it("shows the mark for each tone", () => {
-    const { container, rerender } = render(<Callout tone="success" />);
+    const { container, rerender } = renderWithTheme(<Callout tone="success" />);
     expect(container.querySelector(".callout-mark")?.textContent).toBe("✓");
     rerender(<Callout tone="critical" />);
     expect(container.querySelector(".callout-mark")?.textContent).toBe("!");
@@ -109,13 +93,13 @@ describe("Callout", () => {
   });
 
   it("renders the title and body only when given", () => {
-    const { container } = render(<Callout>Only body</Callout>);
+    const { container } = renderWithTheme(<Callout>Only body</Callout>);
     expect(container.querySelector(".callout-title")).toBeNull();
     expect(container.querySelector(".callout-body")?.textContent).toBe("Only body");
   });
 
   it("omits the body wrapper when there are no children", () => {
-    const { container } = render(<Callout title="Only title" />);
+    const { container } = renderWithTheme(<Callout title="Only title" />);
     expect(container.querySelector(".callout-title")?.textContent).toBe("Only title");
     expect(container.querySelector(".callout-body")).toBeNull();
   });
@@ -124,7 +108,7 @@ describe("Callout", () => {
 describe("Segmented", () => {
   it("marks the selected option with aria-pressed and reports the chosen value", () => {
     const onChange = vi.fn();
-    render(
+    renderWithTheme(
       <Segmented
         label="Option"
         size="sm"
@@ -146,7 +130,7 @@ describe("Segmented", () => {
   });
 
   it("uses the medium size by default", () => {
-    render(<Segmented label="Case" value="a" onChange={() => undefined} options={[{ value: "a", label: "A" }]} />);
+    renderWithTheme(<Segmented label="Case" value="a" onChange={() => undefined} options={[{ value: "a", label: "A" }]} />);
     expect(screen.getByRole("group", { name: "Case" }).className).toBe("segmented segmented-md");
   });
 });
@@ -159,7 +143,7 @@ describe("DataTable", () => {
   ];
 
   it("renders headers, a caption and one row per item with numeric cells aligned", () => {
-    render(
+    renderWithTheme(
       <DataTable
         caption="Options"
         columns={columns}
@@ -175,19 +159,19 @@ describe("DataTable", () => {
   });
 
   it("shows the default empty message when there are no rows", () => {
-    render(<DataTable caption="Empty" columns={columns} rows={[]} rowKey={(r) => r.id} />);
+    renderWithTheme(<DataTable caption="Empty" columns={columns} rows={[]} rowKey={(r) => r.id} />);
     const cell = screen.getByText("Nothing to show.");
     expect(cell.getAttribute("colspan")).toBe("2");
   });
 
   it("shows a custom empty message when given", () => {
-    render(<DataTable caption="Empty" columns={columns} rows={[]} rowKey={(r) => r.id} emptyText="No actions." />);
+    renderWithTheme(<DataTable caption="Empty" columns={columns} rows={[]} rowKey={(r) => r.id} emptyText="No actions." />);
     expect(screen.getByText("No actions.")).toBeTruthy();
   });
 
   it("passes the row index to the row key function", () => {
     const rowKey = vi.fn((_r: Row, i: number) => `row-${i}`);
-    render(
+    renderWithTheme(
       <DataTable
         caption="Keys"
         columns={columns}
@@ -205,14 +189,14 @@ describe("DataTable", () => {
 
 describe("TableView and ChartFigure", () => {
   it("collapses its content behind a default or custom summary", () => {
-    const { rerender } = render(<TableView>Rows</TableView>);
+    const { rerender } = renderWithTheme(<TableView>Rows</TableView>);
     expect(screen.getByText("Show as table").tagName).toBe("SUMMARY");
     rerender(<TableView label="Show options">Rows</TableView>);
     expect(screen.getByText("Show options")).toBeTruthy();
   });
 
   it("renders the figure caption, the chart, the note and the table view", () => {
-    const { container } = render(
+    const { container } = renderWithTheme(
       <ChartFigure label="Net by option" note="Estimate only" table={<p>Table body</p>} tableLabel="Show net">
         <svg data-testid="chart" />
       </ChartFigure>,
@@ -226,7 +210,7 @@ describe("TableView and ChartFigure", () => {
   });
 
   it("omits the note and the table view when they are not given", () => {
-    const { container } = render(
+    const { container } = renderWithTheme(
       <ChartFigure label="Bare">
         <svg />
       </ChartFigure>,
@@ -238,7 +222,7 @@ describe("TableView and ChartFigure", () => {
 
 describe("Dialog", () => {
   it("opens as a modal when open becomes true and shows its title and body", () => {
-    const { container } = render(
+    const { container } = renderWithTheme(
       <Dialog open onClose={() => undefined} title="Evidence" wide>
         <p>Body</p>
       </Dialog>,
@@ -251,7 +235,7 @@ describe("Dialog", () => {
   });
 
   it("does not render its body while closed, and closes an open dialog when it is switched off", () => {
-    const { container, rerender } = render(
+    const { container, rerender } = renderWithTheme(
       <Dialog open={false} onClose={() => undefined} title="Closed">
         <p>Hidden body</p>
       </Dialog>,
@@ -278,7 +262,7 @@ describe("Dialog", () => {
 
   it("calls onClose from the Close button and from a click on the backdrop only", () => {
     const onClose = vi.fn();
-    const { container } = render(
+    const { container } = renderWithTheme(
       <Dialog open onClose={onClose} title="Actions">
         <button type="button">Inside</button>
       </Dialog>,
@@ -297,7 +281,7 @@ describe("Dialog", () => {
 
   it("calls onClose when the platform closes the dialog, for example on Escape", () => {
     const onClose = vi.fn();
-    const { container } = render(
+    const { container } = renderWithTheme(
       <Dialog open onClose={onClose} title="Escape">
         <p>Body</p>
       </Dialog>,

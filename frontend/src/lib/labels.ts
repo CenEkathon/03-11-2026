@@ -1,32 +1,5 @@
 import type { ActionType, ScenarioId, ShortfallReason } from "../api/types";
 
-/** Data-status kinds shown as badges. The full wording comes from response.labels. */
-export type BadgeKind = "MOCK" | "SYNTHETIC" | "EXTERNAL" | "ESTIMATE";
-
-/** Maps a key from response.labels to its badge kind. Unknown keys default to MOCK. */
-const LABEL_KIND: Record<string, BadgeKind> = {
-  goal: "MOCK",
-  roadmap: "MOCK",
-  workforce: "SYNTHETIC",
-  assumptions: "MOCK",
-  vacancy_evidence: "EXTERNAL",
-  estimates: "ESTIMATE",
-  taxonomy: "MOCK",
-  source: "EXTERNAL",
-};
-
-export function badgeKind(labelKey: string): BadgeKind {
-  return LABEL_KIND[labelKey] ?? "MOCK";
-}
-
-/** One plain-language sentence per badge, for the "What is mock?" dialog. */
-export const BADGE_MEANING: Record<BadgeKind, string> = {
-  MOCK: "Invented for the demo: the company, the goal, the roadmap and the assumptions.",
-  SYNTHETIC: "Generated workforce. Fictional people with IDs only. No names, no real employees.",
-  EXTERNAL: "Observed in real 2021 job postings (aggregated). Not attributed to any employer.",
-  ESTIMATE: "Modelled from mock assumptions. Treat every cost and benefit as an estimate.",
-};
-
 export const REASON_LABEL: Record<ShortfallReason, string> = {
   hire_not_started: "Hire not yet started",
   lead_time_too_short: "Training lead time too short",
@@ -61,10 +34,10 @@ export const SCENARIO_SLOT: Record<ScenarioId, number> = {
   hybrid: 2,
 };
 
-/** Skill levels in the mock workforce and requirements: 1 basic, 2 working, 3 expert. */
+/** Skill levels: 1 basic, 2 working, 3 expert. */
 export const LEVEL_NAMES: Record<number, string> = { 1: "1 basic", 2: "2 working", 3: "3 expert" };
 
 export const RECOMMENDED: ScenarioId = "hybrid";
 
 export const DISCLAIMER =
-  "Numbers are computed by code from mock assumptions. Text is drafted by a template, or by AI if enabled. Nothing here describes a real company or real people.";
+  "Numbers are calculated by code from the planning assumptions. Text is drafted by a template, or by AI if enabled.";

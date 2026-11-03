@@ -1,6 +1,5 @@
 """Thin FastAPI layer. No business logic here: it validates input, calls the engine, and returns JSON.
 
-All responses are labelled MOCK, SYNTHETIC or EXTERNAL where they carry such data.
 Run: uv run uvicorn strategy_compiler.api:app --reload --port 8000
 """
 
@@ -37,9 +36,9 @@ from .narrative import build_brief, usage_summary
 from .roadmap import RoadmapError
 
 app = FastAPI(
-    title="Strategy Compiler (MOCK hackathon demo)",
+    title="Strategy Compiler",
     version="0.1.0",
-    description="MOCK goal, MOCK roadmap, SYNTHETIC workforce, ESTIMATED finance. KBC is used only as an illustrative example name. Nothing describes KBC's real strategy, staff or figures.",
+    description="Turns a business goal into a workforce and financial execution plan.",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -67,7 +66,7 @@ async def _unknown_key(_: Any, exc: KeyError) -> JSONResponse:
 
 @app.get("/api/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "labels": "MOCK"}
+    return {"status": "ok"}
 
 
 @app.get("/api/case")
@@ -100,7 +99,7 @@ def skills() -> dict[str, Any]:
     tax = load_taxonomy()
     return {
         "skills": [{"id": s.id, "label": s.label, "family": s.family, "esco_uri": s.esco_uri} for s in tax.skills],
-        "labels": {"taxonomy": "MOCK / CURATED v1 (ESCO-aligned labels, not an official ESCO export)"},
+        "labels": {"taxonomy": "Curated skill taxonomy v1 (ESCO-aligned labels)"},
     }
 
 
@@ -194,7 +193,7 @@ def brief(req: BriefRequest) -> BriefResponse:
             assumption_overrides=req.assumption_overrides,
         )
     )
-    return build_brief(plan, req.scenario)
+    return build_brief(plan, req.scenario, req.lang)
 
 
 @app.get("/api/usage")

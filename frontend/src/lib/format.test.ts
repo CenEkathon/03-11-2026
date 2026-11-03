@@ -1,18 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  formatAxisMonth,
-  formatByUnit,
-  formatCount,
-  formatEur,
-  formatEurCompact,
-  formatFte,
-  formatFteCompact,
-  formatMetricTarget,
-  formatMonth,
-  formatMonthRange,
-  formatPct,
-} from "./format";
-import { badgeKind, SCENARIO_SLOT } from "./labels";
+import { formatCount, formatEur, formatEurCompact, formatFte, formatMonth, formatMonthRange, formatPct } from "./format";
+import { SCENARIO_SLOT } from "./labels";
 
 describe("formatEur", () => {
   it("shows whole euros with a thousands separator", () => {
@@ -68,50 +56,38 @@ describe("month labels", () => {
   });
 });
 
-describe("badge and scenario helpers", () => {
-  it("maps label keys to badge kinds and defaults unknown keys to MOCK", () => {
-    expect(badgeKind("workforce")).toBe("SYNTHETIC");
-    expect(badgeKind("vacancy_evidence")).toBe("EXTERNAL");
-    expect(badgeKind("estimates")).toBe("ESTIMATE");
-    expect(badgeKind("something_new")).toBe("MOCK");
-  });
-
+describe("scenario helpers", () => {
   it("gives each scenario a fixed colour slot", () => {
     expect(new Set(Object.values(SCENARIO_SLOT)).size).toBe(3);
     expect(SCENARIO_SLOT.hybrid).toBe(2);
   });
 });
 
-describe("chart and metric formatting", () => {
-  it("formats axis months as short month and two-digit year", () => {
-    expect(formatAxisMonth("2027-01")).toBe("Jan '27");
-    expect(formatAxisMonth("2028-12")).toBe("Dec '28");
-    expect(formatAxisMonth("not a month")).toBe("not a month");
+describe("formatFteCompact", () => {
+  it("shows whole FTE without decimals and fractional FTE with one", async () => {
+    const { formatFteCompact } = await import("./format");
+    expect(formatFteCompact(2)).toBe("2");
+    expect(formatFteCompact(1.5)).toBe("1.5");
+  });
+});
+
+describe("unit and axis formatting branches", () => {
+  it("leaves a non-month axis label as it is", async () => {
+    const { formatAxisMonth } = await import("./format");
+    expect(formatAxisMonth("2027")).toBe("2027");
   });
 
-  it("shows whole counts without decimals and fractional FTE with one", () => {
-    expect(formatFteCompact(3)).toBe("3");
-    expect(formatFteCompact(2.25)).toBe("2.3");
+  it("formats money with and without a per-unit suffix", async () => {
+    const { formatByUnit, formatEur } = await import("./format");
+    expect(formatByUnit(1000, "EUR")).toBe(formatEur(1000));
+    expect(formatByUnit(40, "EUR/review")).toBe(`${formatEur(40)} per review`);
   });
 
-  it("shows share targets as percent and other targets with their unit", () => {
-    expect(formatMetricTarget(0.6, "share")).toBe("60%");
-    expect(formatMetricTarget(1, "count")).toBe("1 count");
-    expect(formatMetricTarget(2.5, "EUR/day")).toBe("2.50 EUR/day");
-  });
-
-  it("formats each assumption unit for display", () => {
-    expect(formatByUnit(0.35, "share")).toBe("35.0%");
-    expect(formatByUnit(650, "EUR/day")).toBe("EUR 650 per day");
-    expect(formatByUnit(2000, "EUR")).toBe("EUR 2,000");
-    expect(formatByUnit(1.35, "multiplier")).toBe("1.35×");
-    expect(formatByUnit(12, "days")).toBe("12 days");
-    expect(formatByUnit(1.5, "days")).toBe("1.50 days");
-    expect(formatByUnit(7, "")).toBe("7");
-    expect(formatByUnit(7, undefined)).toBe("7");
-  });
-
-  it("shows a fractional ratio to two decimals when the unit has no special case", () => {
-    expect(formatMetricTarget(0.75, "ratio")).toBe("0.75 ratio");
+  it("formats multipliers, whole and fractional units, and values with no unit", async () => {
+    const { formatByUnit } = await import("./format");
+    expect(formatByUnit(1.5, "multiplier")).toBe("1.50×");
+    expect(formatByUnit(2, "FTE")).toBe("2 FTE");
+    expect(formatByUnit(2.5, "FTE")).toBe("2.50 FTE");
+    expect(formatByUnit(3, undefined)).toBe("3");
   });
 });

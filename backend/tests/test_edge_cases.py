@@ -285,3 +285,17 @@ def test_requirement_specs_expand_inside_horizon():
     reqs = expand_requirements(load_requirement_specs(), load_milestones())
     assert reqs
     assert all(r.start in HORIZON and r.end in HORIZON for r in reqs)
+
+
+def test_no_cost_at_all_means_no_payback_to_extrapolate():
+    from strategy_compiler.finance import Book, extend_past_deadline, months_after_deadline_to_payback
+
+    book = Book(
+        months=list(HORIZON), adoption=[0.0] * len(HORIZON), required=[0.0] * len(HORIZON),
+        staffed=[0.0] * len(HORIZON), coverage=[1.0] * len(HORIZON), benefit=[0.0] * len(HORIZON),
+        one_off=[0.0] * len(HORIZON), recurring=[0.0] * len(HORIZON), freed_fte=[0.0] * len(HORIZON),
+        items=[], horizon_len=len(HORIZON),
+    )
+    assert months_after_deadline_to_payback(book) is None
+    with pytest.raises(ValueError, match="extra_months must be >= 0"):
+        extend_past_deadline(book, -1)

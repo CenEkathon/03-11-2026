@@ -1,7 +1,7 @@
-# MOCK ASSUMPTIONS - 12 illustrative numbers for the hackathon demo. None is a company figure.
+# PLANNING ASSUMPTIONS - 12 numbers that drive the money. Editable in the app.
 # "low" is the CONSERVATIVE case (worse for the business case). "high" is the OPTIMISTIC case.
 # The base case is used by default. Edit values here or override them in the Assumptions screen.
-# Change costs per milestone are fixed in roadmap.json.
+# Change costs per milestone are set in roadmap.json.
 
 assumptions:
   - key: ai_cost_saving_pct
@@ -11,7 +11,7 @@ assumptions:
     base: 0.35
     high: 0.40
     confidence: low
-    rationale: Base equals the goal target. Not observed. Low and high are judgement.
+    rationale: Base equals the goal target. Not yet observed. Low and high are judgement.
 
   - key: platform_cost_eur_month
     label: AI platform licence and hosting, per month from the pilot
@@ -20,7 +20,7 @@ assumptions:
     base: 25000
     high: 20000
     confidence: low
-    rationale: Mock licence and hosting cost.
+    rationale: Monthly licence and hosting cost for the AI platform.
 
   - key: cost_per_fte_year_eur
     label: Yearly cost of one person (salary plus employer costs)
@@ -29,7 +29,7 @@ assumptions:
     base: 80000
     high: 72000
     confidence: low
-    rationale: Mock average cost for a KYC, data or compliance role. Not company pay data.
+    rationale: Average yearly cost for a KYC, data or compliance role.
 
   - key: reviews_per_fte_year
     label: Reviews one person handles per year today
@@ -38,7 +38,7 @@ assumptions:
     base: 2000
     high: 2200
     confidence: low
-    rationale: Mock productivity. Used only for the freed-capacity figure.
+    rationale: Reviews per person per year. Used only for the freed-capacity figure.
 
   - key: backfill_share
     label: Share of a moved person's yearly cost paid to cover their old work
@@ -47,7 +47,7 @@ assumptions:
     base: 0.5
     high: 0.4
     confidence: low
-    rationale: Applies to redeployed and reskilled people. Mock; depends on team workload.
+    rationale: Applies to redeployed and reskilled people. Depends on team workload.
 
   - key: redeploy_cost_eur
     label: One-off cost to move one person into a new role
@@ -56,7 +56,7 @@ assumptions:
     base: 1000
     high: 500
     confidence: low
-    rationale: Handover and role change. Mock.
+    rationale: Handover and role change.
 
   - key: reskill_cost_eur
     label: One-off training cost per reskilled person (course and cover for lost time)
@@ -65,7 +65,7 @@ assumptions:
     base: 3000
     high: 2000
     confidence: low
-    rationale: Mock course and trainer cost.
+    rationale: Course and trainer cost.
 
   - key: reskill_training_months
     label: Training time before a reskilled person starts the new role
@@ -74,7 +74,7 @@ assumptions:
     base: 2
     high: 1
     confidence: low
-    rationale: Mock. The person does no programme work while training.
+    rationale: The person does no programme work while training.
 
   - key: reskill_uplift_eur_year
     label: Yearly pay rise for a reskilled person
@@ -83,7 +83,7 @@ assumptions:
     base: 4000
     high: 3000
     confidence: low
-    rationale: Mock. Only the rise is new cost, because the base salary is already paid.
+    rationale: Only the rise is new cost, because the base salary is already paid.
 
   - key: hire_cost_eur
     label: One-off cost per new hire (recruitment, onboarding, ramp-up)
@@ -92,7 +92,7 @@ assumptions:
     base: 20000
     high: 15000
     confidence: low
-    rationale: Mock. Includes recruiter fee, onboarding and mentor time.
+    rationale: Includes recruiter fee, onboarding and mentor time.
 
   - key: hire_lead_time_months
     label: Months from programme start until a new hire can start
@@ -101,7 +101,7 @@ assumptions:
     base: 4
     high: 3
     confidence: low
-    rationale: Mock recruiting lead time.
+    rationale: Typical recruiting lead time.
 
   - key: contractor_day_rate_eur
     label: Contractor day rate (bridge cover, capped at 30% of a need)
@@ -110,4 +110,4 @@ assumptions:
     base: 900
     high: 800
     confidence: low
-    rationale: Mock external rate.
+    rationale: External day rate for bridge cover.

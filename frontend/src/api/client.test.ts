@@ -57,7 +57,7 @@ describe("api client", () => {
   it("posts sensitivity and brief requests to their own paths", async () => {
     fetchMock.mockResolvedValue(response(200, "[]"));
     await api.sensitivity({ case: "low" });
-    await api.brief({ scenario: "hybrid", case: "high" });
+    await api.brief({ scenario: "hybrid", case: "high", lang: "en" });
     expect(fetchMock.mock.calls[0][0]).toBe("http://127.0.0.1:8000/api/plan/sensitivity");
     expect(fetchMock.mock.calls[1][0]).toBe("http://127.0.0.1:8000/api/brief");
   });

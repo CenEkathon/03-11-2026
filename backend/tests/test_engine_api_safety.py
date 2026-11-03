@@ -33,12 +33,42 @@ def test_default_plan_is_valid_with_three_scenarios(base_plan):
     assert set(base_plan.scenarios) == {"reskill_led", "hire_led", "hybrid"}
 
 
-def test_every_scenario_has_24_monthly_points_and_is_consistent(base_plan):
+def test_every_scenario_has_24_deadline_months_and_is_consistent(base_plan):
     for sr in base_plan.scenarios.values():
-        assert len(sr.monthly) == 24
-        cum = sum(p.net_eur for p in sr.monthly)
-        assert cum == pytest.approx(sr.totals.net_eur, rel=1e-9, abs=1e-6)
+        deadline = [p for p in sr.monthly if not p.after_deadline]
+        assert len(deadline) == 24
+        # deadline totals cover only the 24 deadline months, so they equal the sum of the deadline net
+        assert sum(p.net_eur for p in deadline) == pytest.approx(sr.totals.net_eur, rel=1e-9, abs=1e-6)
         assert sr.totals.cost_total_eur == pytest.approx(sr.totals.cost_one_off_eur + sr.totals.cost_recurring_eur)
+
+
+def test_all_scenarios_share_one_series_length_past_the_deadline(base_plan):
+    lengths = {len(sr.monthly) for sr in base_plan.scenarios.values()}
+    assert len(lengths) == 1
+    assert max(lengths) >= 24
+
+
+def test_payback_is_the_first_month_cumulative_net_reaches_zero(base_plan):
+    for sr in base_plan.scenarios.values():
+        t = sr.totals
+        first_cost = next(i for i, p in enumerate(sr.monthly) if p.cost_one_off_eur + p.cost_recurring_eur > 0)
+        crossing = next((i for i, p in enumerate(sr.monthly) if i >= first_cost and p.cumulative_net_eur >= 0), None)
+        if t.payback_month is None:
+            assert crossing is None
+            assert t.payback_months_after_deadline is None
+            continue
+        assert sr.monthly[crossing].month == t.payback_month
+        assert sr.monthly[crossing].cumulative_net_eur >= 0
+        assert t.payback_months_after_deadline == max(0, crossing - 23)
+        assert t.payback_within_deadline == (crossing < 24)
+
+
+def test_payback_after_deadline_adds_run_rate_months_only(base_plan):
+    for sr in base_plan.scenarios.values():
+        for p in sr.monthly:
+            if p.after_deadline:
+                assert p.required_fte == 0.0 and p.staffed_fte == 0.0
+                assert p.cost_one_off_eur == 0.0
 
 
 def test_action_costs_reconcile_to_scenario_totals(base_plan):
@@ -96,9 +126,9 @@ def test_brief_facts_contain_no_employee_ids(base_plan):
     assert not EMPLOYEE_ID.search(json.dumps(facts))
 
 
-def test_template_brief_is_labelled_mock_and_has_no_employee_ids(base_plan):
+def test_template_brief_has_no_employee_ids(base_plan):
     text = _template(build_facts(base_plan, "hybrid"))
-    assert "MOCK" in text
+    assert text.startswith("Brief - ")
     assert not EMPLOYEE_ID.search(text)
     assert "dismiss" not in text.lower()
 
@@ -108,7 +138,7 @@ def test_api_brief_default_is_template_without_live_llm(client):
     assert response.status_code == 200
     body = response.json()
     assert body["drafted_by"] == "template"
-    assert "MOCK" in body["text"]
+    assert body["text"].startswith("Brief - ")
 
 
 # ---------------------------------------------------------------- API contract
@@ -182,4 +212,25 @@ def test_brief_rejects_invalid_roadmap(client):
         "/api/brief",
         json={"scenario": "hybrid", "milestone_dates": {"M3": {"start": "2027-11", "end": "2028-05"}}},
     )
+    assert response.status_code == 422
+
+
+def test_dutch_template_brief_is_labelled_mock_and_uses_dutch_numbers(base_plan):
+    from strategy_compiler.narrative import _template_nl
+
+    text = _template_nl(build_facts(base_plan, "hybrid"))
+    assert "MOCK" in text
+    assert "Programmakosten" in text
+    assert not EMPLOYEE_ID.search(text)
+
+
+def test_api_brief_dutch_default_is_template(client):
+    body = client.post("/api/brief", json={"scenario": "hybrid", "lang": "nl"}).json()
+    assert body["drafted_by"] == "template"
+    assert "MOCK-BRIEF" in body["text"]
+    assert "Gevraagde beslissing" in body["text"]
+
+
+def test_api_brief_rejects_unknown_language(client):
+    response = client.post("/api/brief", json={"scenario": "hybrid", "lang": "fr"})
     assert response.status_code == 422

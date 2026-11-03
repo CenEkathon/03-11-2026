@@ -217,7 +217,7 @@ def run_etl(
     )
 
     evidence_doc = {
-        "label": "EXTERNAL OBSERVED - 2021 - aggregated job-posting evidence (not mock)",
+        "label": "2021 job-posting evidence, aggregated",
         "source": (
             "Finance and insurance job postings, 2021, EN/NL/FR. Deduplicated, then mapped "
             "with the rule-based curated taxonomy. Aggregates only."

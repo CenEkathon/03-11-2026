@@ -2,6 +2,7 @@
  * Client-side mirror of the backend roadmap checks, used only to show errors before a round trip.
  * The backend stays the source of truth: a 422 from /api/plan/compute always wins.
  */
+import { t } from "../i18n/i18n";
 import { monthIndex } from "./months";
 
 export { monthIndex } from "./months";
@@ -63,4 +64,45 @@ export function isDirty(
     const a = applied[m.id];
     return a !== undefined && (a.start !== m.start || a.end !== m.end);
   });
+}
+
+/**
+ * Translates one timing message from checkDraft or from the server, at render time. Messages keep their English
+ * form in state so that a language switch updates them. Unknown messages are returned unchanged.
+ */
+export function localizeTimingError(message: string): string {
+  const rules: [RegExp, (m: RegExpMatchArray) => string][] = [
+    [/^(\S+): start must be a month \(YYYY-MM\)$/, (m) => t("{id}: start must be a month (YYYY-MM)", { id: m[1] })],
+    [/^(\S+): end must be a month \(YYYY-MM\)$/, (m) => t("{id}: end must be a month (YYYY-MM)", { id: m[1] })],
+    [/^(\S+): end (\S+) is before start (\S+)$/, (m) => t("{id}: end {end} is before start {start}", { id: m[1], end: m[2], start: m[3] })],
+    [/^(\S+): unknown dependency (\S+)$/, (m) => t("{id}: unknown dependency {dep}", { id: m[1], dep: m[2] })],
+    [
+      /^(\S+) starts (\S+), which is not after (\S+) ends (\S+) \(finish-to-start\)$/,
+      (m) =>
+        t("{id} starts {start}, which is not after {dep} ends {depEnd} (finish-to-start)", {
+          id: m[1],
+          start: m[2],
+          dep: m[3],
+          depEnd: m[4],
+        }),
+    ],
+    [
+      /^(\S+): (\S+)\.\.(\S+) is outside the horizon (\S+)\.\.(\S+)$/,
+      (m) =>
+        t("{id}: {start}..{end} is outside the horizon {horizonStart}..{horizonEnd}", {
+          id: m[1],
+          start: m[2],
+          end: m[3],
+          horizonStart: m[4],
+          horizonEnd: m[5],
+        }),
+    ],
+    [/^dependency cycle detected$/, () => t("dependency cycle detected")],
+    [/^duplicate milestone ids$/, () => t("duplicate milestone ids")],
+  ];
+  for (const [pattern, render] of rules) {
+    const match = pattern.exec(message);
+    if (match) return render(match);
+  }
+  return message;
 }

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, screen, within } from "@testing-library/react";
 import App from "./App";
 import { api, ApiError } from "./api/client";
 import type { PlanResponse, SensitivityRow } from "./api/types";
@@ -7,6 +7,7 @@ import { ThemeProvider } from "./theme/ThemeProvider";
 import { MOCK_ANALYSIS_DELAY_MS } from "./lib/analysisSteps";
 import { ASSUMPTIONS, CASE_INFO, makePlan, SENSITIVITY, SKILL_LABELS } from "./test/fixtures";
 import { resetRecorded } from "./test/rechartsStub";
+import { renderWithTheme } from "./test/render";
 
 vi.mock("recharts", () => import("./test/rechartsStub"));
 
@@ -51,7 +52,7 @@ function useHappyApi(plan: PlanResponse = makePlan()) {
 }
 
 function renderApp() {
-  return render(
+  return renderWithTheme(
     <ThemeProvider>
       <App />
     </ThemeProvider>,
@@ -292,7 +293,7 @@ describe("App recalculation", () => {
     fireEvent.click(screen.getByRole("button", { name: "Draft brief" }));
     await flush();
     expect(screen.getByText("Brief text from the mock engine.")).toBeTruthy();
-    expect(mocked.brief).toHaveBeenCalledWith({ scenario: "hybrid", case: "base", milestone_dates: null, assumption_overrides: null });
+    expect(mocked.brief).toHaveBeenCalledWith({ scenario: "hybrid", case: "base", milestone_dates: null, assumption_overrides: null, lang: "en" });
   });
 });
 
@@ -304,13 +305,13 @@ describe("App load states", () => {
     renderApp();
     await sendIntake();
     await finishAnalysis();
-    expect(screen.getByText("Loading the mock plan from the API…")).toBeTruthy();
+    expect(screen.getByText("Loading the plan…")).toBeTruthy();
 
     await act(async () => {
       caseInfo.resolve(CASE_INFO);
     });
     await flush();
-    expect(screen.queryByText("Loading the mock plan from the API…")).toBeNull();
+    expect(screen.queryByText("Loading the plan…")).toBeNull();
   });
 
   it("explains how to start the backend when the plan cannot be loaded", async () => {

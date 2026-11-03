@@ -7,6 +7,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    fs: { allow: [".."] }, // tests read the backend mock fixtures with ?raw
     proxy: {
       "/api": {
         target: "http://127.0.0.1:8000",

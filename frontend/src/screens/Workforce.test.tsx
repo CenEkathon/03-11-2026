@@ -169,7 +169,7 @@ describe("Workforce evidence dialog", () => {
       "12 people in contributing teams",
       "5 people, one or two levels short on an adjacent skill",
       "90% (curated taxonomy)",
-      "42% of deduplicated postings (external, not used in the arithmetic)",
+      "42% of deduplicated postings (2021, not used in the arithmetic)",
     ]);
     expect(within(dialog).getByText("EMP-0001")).toBeTruthy();
     expect(within(dialog).getByText("EMP-0002")).toBeTruthy();
@@ -218,5 +218,16 @@ describe("Workforce evidence dialog", () => {
     fireEvent.click(within(requirementsTable()).getAllByRole("button", { name: "View IDs" })[0]);
     expect(dialog.open).toBe(true);
     expect(within(dialog).queryByText("Skill")).toBeNull();
+  });
+});
+
+describe("Workforce evidence without employee IDs", () => {
+  it("shows no ID list when the server sends none for the requirement", () => {
+    const plan = makePlan();
+    plan.skill_fit = plan.skill_fit.map((f) => ({ ...f, evidence_employee_ids: undefined }));
+    renderWorkforce(makeShared({ plan }));
+    fireEvent.click(within(requirementsTable()).getAllByRole("button", { name: "View IDs" })[0]);
+    const dialog = document.querySelector("dialog") as HTMLDialogElement;
+    expect(dialog.querySelector(".id-list")).toBeNull();
   });
 });

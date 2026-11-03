@@ -33,7 +33,7 @@ describe("Finance KPIs", () => {
     expect(kpiValue("Benefit to deadline")).toBe(formatEur(hybrid.benefit_eur));
     expect(kpiValue("Net to deadline")).toBe(formatEur(hybrid.net_eur));
     expect(kpiValue("ROI to deadline")).toBe(formatPct(hybrid.roi));
-    expect(kpiValue("Payback")).toBe("Not by deadline");
+    expect(kpiValue("Payback")).toBe("Not reached");
     expect(screen.getByText(`Recurring ${formatEur(hybrid.cost_recurring_eur)}`)).toBeTruthy();
     expect(document.querySelector(".kpi-value.kpi-bad")).not.toBeNull();
   });
@@ -46,17 +46,17 @@ describe("Finance KPIs", () => {
     renderFinance(makeShared({ plan: winning }));
     expect(kpiValue("Payback")).toBe("Mar 2028");
     expect(document.querySelector(".kpi-value.kpi-bad")).toBeNull();
-    expect(screen.queryByText(/does not pay back before the deadline/)).toBeNull();
+    expect(screen.queryByText(/does not pay back within/)).toBeNull();
   });
 
   it("explains that the run-rate figure is an estimate", () => {
     renderFinance();
-    expect(screen.getByText("Estimate, not a forecast")).toBeTruthy();
+    expect(screen.getByText(/simple estimate, not a forecast/)).toBeTruthy();
   });
 
   it("warns that the option does not pay back, with its name, when payback is missing", () => {
     renderFinance();
-    const warning = screen.getByText("Hybrid does not pay back before the deadline").closest(".callout");
+    const warning = screen.getByText("Hybrid does not pay back within 20 years").closest(".callout");
     expect(warning?.className).toBe("callout callout-warning");
     expect(screen.getByText(/The yearly run-rate figure shows what the option would net per year/)).toBeTruthy();
   });
@@ -65,7 +65,7 @@ describe("Finance KPIs", () => {
     renderFinance();
     fireEvent.click(screen.getByRole("button", { name: "Reskill-led" }));
     expect(kpiValue("Cost to deadline")).toBe(formatEur(plan.scenarios.reskill_led.totals.cost_total_eur));
-    expect(screen.getByText("Reskill-led does not pay back before the deadline")).toBeTruthy();
+    expect(screen.getByText("Reskill-led does not pay back within 20 years")).toBeTruthy();
   });
 });
 
@@ -171,7 +171,7 @@ describe("Finance comparison and method", () => {
     expect(rows).toHaveLength(3);
     expect(rows[2][0]).toBe("Hybrid");
     expect(rows[2][4]).toBe(formatPct(hybrid.roi));
-    expect(rows[2][5]).toBe("Not by deadline");
+    expect(rows[2][5]).toBe("Not reached");
     expect(rows[2][6]).toBe(formatEur(hybrid.run_rate_net_eur_year));
   });
 
@@ -200,5 +200,45 @@ describe("Finance comparison and method", () => {
     expect(screen.queryByRole("button", { name: "Reskill-led" })).toBeNull();
     expect(screen.getByRole("button", { name: "Hybrid" })).toBeTruthy();
     expect(allOf("Line").map((l) => l.dataKey)).toEqual(["hire_led", "hybrid"]);
+  });
+});
+
+describe("Finance payback after the deadline", () => {
+  function afterDeadlinePlan() {
+    const plan = makePlan();
+    const base = plan.scenarios.hybrid.monthly;
+    const extra = { ...base[base.length - 1], month: "2029-03", after_deadline: true, cumulative_net_eur: 1234 };
+    plan.scenarios.hybrid = scenarioFor("hybrid", {
+      monthly: [...base, extra],
+      totals: {
+        ...plan.scenarios.hybrid.totals,
+        payback_month: "2029-03",
+        payback_within_deadline: false,
+        payback_months_after_deadline: 3,
+      },
+    });
+    return plan;
+  }
+
+  it("shows the payback as after the deadline in the KPI, the callout and the monthly table", () => {
+    renderFinance(makeShared({ plan: afterDeadlinePlan() }));
+    expect(kpiValue("Payback")).toBe("Mar 2029");
+    expect(screen.getByText("3 months after the deadline")).toBeTruthy();
+    expect(screen.getByText("Hybrid pays back 3 months after the deadline")).toBeTruthy();
+    const table = screen.getByRole("table", { name: "Monthly series, Hybrid" });
+    expect(rowsOf(table).some((r) => r[0] === "Mar 2029 (after deadline)")).toBe(true);
+  });
+});
+
+describe("Finance payback within the deadline", () => {
+  it("shows a good payback and no after-deadline callout", () => {
+    const plan = makePlan();
+    plan.scenarios.hybrid = scenarioFor("hybrid", {
+      totals: { ...plan.scenarios.hybrid.totals, payback_month: "2028-03", payback_within_deadline: true, payback_months_after_deadline: null },
+    });
+    renderFinance(makeShared({ plan }));
+    expect(kpiValue("Payback")).toBe("Mar 2028");
+    expect(document.querySelector(".kpi-value.kpi-good")).not.toBeNull();
+    expect(screen.queryByText(/pays back .* after the deadline/)).toBeNull();
   });
 });

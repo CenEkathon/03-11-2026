@@ -1,7 +1,9 @@
 import { useId, useState, type ChangeEvent, type FormEvent } from "react";
-import { Badge, Card, PageHeader } from "../components/ui";
+import { Card, PageHeader } from "../components/ui";
 import { SAMPLE_BRIEFS } from "../lib/sampleBriefs";
 import { summariseWorkerCsv, type WorkerCsvSummary } from "../lib/workerCsv";
+import { t } from "../i18n/i18n";
+import { useLang } from "../i18n/LanguageProvider";
 
 export interface IntakeInput {
   text: string;
@@ -23,8 +25,10 @@ interface AttachedFile {
  * Nothing is uploaded: the analysis is simulated in the app and the plan keeps using the synthetic workforce fixture.
  */
 export function Intake({ onSubmit }: Props) {
+  useLang();
   const [text, setText] = useState("");
   const [file, setFile] = useState<AttachedFile | null>(null);
+  /** English message key from workerCsv or this file. It is translated at render time, so a language switch updates it. */
   const [fileError, setFileError] = useState<string | null>(null);
   const [reading, setReading] = useState(false);
   const textId = useId();
@@ -62,31 +66,30 @@ export function Intake({ onSubmit }: Props) {
   return (
     <>
       <PageHeader
-        title="Describe the goal and attach the workers"
+        title={t("Describe the goal and attach the workers")}
         lead={
           <>
-            Add the context in your own words and attach the worker list as a CSV. The analysis step is mocked and takes about
-            seven seconds. Nothing is uploaded, and the plan still uses the synthetic workforce data.
+            Add the context in your own words and attach the worker list as a CSV. Analysis takes about seven
+            seconds. Nothing is uploaded.
           </>
         }
       />
 
       <form className="intake-form" onSubmit={submit} noValidate>
         <Card
-          title="1. Your brief"
-          description="Free text. For example, the goal, the teams involved and any constraints you want the plan to respect."
-          actions={<Badge kind="MOCK" />}
+          title={t("1. Your brief")}
+          description={t("Free text. For example, the goal, the teams involved and any constraints you want the plan to respect.")}
         >
           <div className="field">
             <div className="field-row">
               <label htmlFor={textId} className="field-label">
-                Brief
+                {t("Brief")}
               </label>
-              <div className="sample-buttons" role="group" aria-label="Fill the brief with a sample (demo)">
-                <span className="muted small">Demo samples:</span>
+              <div className="sample-buttons" role="group" aria-label={t("Fill the brief with a sample (demo)")}>
+                <span className="muted small">{t("Demo samples:")}</span>
                 {SAMPLE_BRIEFS.map((s) => (
-                  <button key={s.label} type="button" className="btn btn-small" onClick={() => setText(s.text)}>
-                    {s.label}
+                  <button key={s.label} type="button" className="btn btn-small" onClick={() => setText(t(s.text))}>
+                    {t(s.label)}
                   </button>
                 ))}
               </div>
@@ -97,19 +100,18 @@ export function Intake({ onSubmit }: Props) {
               rows={6}
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="Type the context for the plan here…"
+              placeholder={t("Type the context for the plan here…")}
             />
           </div>
         </Card>
 
         <Card
-          title="2. Workers (CSV)"
-          description="Header row plus one row per worker. Only the column names and row count are read at this step."
-          actions={<Badge kind="SYNTHETIC" />}
+          title={t("2. Workers (CSV)")}
+          description={t("Header row plus one row per worker. Only the column names and row count are read at this step.")}
         >
           <div className="field">
             <label htmlFor={fileId} className="field-label">
-              CSV file
+              {t("CSV file")}
             </label>
             <input
               id={fileId}
@@ -121,12 +123,16 @@ export function Intake({ onSubmit }: Props) {
               aria-describedby={`${fileId}-status`}
             />
             <div id={`${fileId}-status`} className="field-status" role={fileError ? "alert" : "status"} aria-live="polite">
-              {reading ? <span className="muted">Reading the file…</span> : null}
-              {fileError ? <span className="field-error">{fileError}</span> : null}
+              {reading ? <span className="muted">{t("Reading the file…")}</span> : null}
+              {fileError ? <span className="field-error">{t(fileError)}</span> : null}
               {file && !reading ? (
                 <span>
-                  <strong>{file.name}</strong>: {file.summary.rowCount} worker rows, {file.summary.headers.length} columns (
-                  {file.summary.headers.join(", ")})
+                  <strong>{file.name}</strong>:{" "}
+                  {t("{rows} worker rows, {columns} columns ({headers})", {
+                    rows: file.summary.rowCount,
+                    columns: file.summary.headers.length,
+                    headers: file.summary.headers.join(", "),
+                  })}
                 </span>
               ) : null}
             </div>
@@ -134,9 +140,9 @@ export function Intake({ onSubmit }: Props) {
         </Card>
 
         <div className="intake-actions">
-          <p className="muted small">The text and file stay in this browser tab. Refreshing the page starts again here.</p>
+          <p className="muted small">{t("The text and file stay in this browser tab. Refreshing the page starts again here.")}</p>
           <button type="submit" className="btn btn-primary" disabled={!canSubmit}>
-            Send for analysis
+            {t("Send for analysis")}
           </button>
         </div>
       </form>

@@ -18,10 +18,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .config import EPS, PLATFORM_START_MILESTONE, WORKING_DAYS_PER_MONTH
+import math
+from collections.abc import Hashable, Mapping
+
+from .config import EPS, PAYBACK_MAX_MONTHS_AFTER_DEADLINE, PLATFORM_START_MILESTONE, WORKING_DAYS_PER_MONTH
 from .contracts import Goal, Milestone, Requirement
 from .planner import RawScenario
-from .timeline import month_range, parse_month
+from .timeline import format_month, month_range, parse_month
 
 ONE_OFF = "one_off"
 RECURRING = "recurring"
@@ -48,10 +51,17 @@ class Book:
     recurring: list[float]
     freed_fte: list[float]
     items: list[CostItem]
+    horizon_len: int = 0  # months up to and including the deadline; later months are run-rate extension
 
     @property
     def net(self) -> list[float]:
         return [b - o - r for b, o, r in zip(self.benefit, self.one_off, self.recurring, strict=True)]
+
+    @property
+    def run_rate_net(self) -> float:
+        """Benefit minus recurring cost in the deadline month. Continued unchanged after the deadline."""
+        last = self.horizon_len - 1
+        return self.benefit[last] - self.recurring[last]
 
 
 def cost_items(raw: RawScenario, a: dict[str, float]) -> list[CostItem]:
@@ -132,7 +142,7 @@ def build_book(
 
     book = Book(
         months=list(horizon), adoption=[], required=[], staffed=[], coverage=[],
-        benefit=[], one_off=[], recurring=[], freed_fte=[], items=items,
+        benefit=[], one_off=[], recurring=[], freed_fte=[], items=items, horizon_len=len(horizon),
     )
     one_off = {m: 0.0 for m in horizon}
     recurring = {m: 0.0 for m in horizon}
@@ -158,3 +168,81 @@ def build_book(
         book.one_off.append(one_off[m])
         book.recurring.append(recurring[m])
     return book
+
+
+# ---------------------------------------------------------------- payback, including after the deadline
+def first_cost_index(book: Book) -> int | None:
+    """Index of the first month that carries any cost. Payback is only counted from here."""
+    return next((i for i, (o, r) in enumerate(zip(book.one_off, book.recurring, strict=True)) if o + r > EPS), None)
+
+
+def payback_index(net: list[float], first_cost: int | None) -> int | None:
+    """First index where cumulative net is >= 0, counting only from the first month with any cost."""
+    if first_cost is None:
+        return None
+    cumulative = 0.0
+    for i, value in enumerate(net):
+        cumulative += value
+        if i >= first_cost and cumulative >= 0:
+            return i
+    return None
+
+
+def months_after_deadline_to_payback(book: Book, cap: int = PAYBACK_MAX_MONTHS_AFTER_DEADLINE) -> int | None:
+    """Months after the deadline needed to reach payback at the run rate, or None.
+
+    0 means payback is already inside the deadline. Solves cumulative + k x run_rate >= 0 for the smallest whole k.
+    One-off costs stop at the deadline, so only the run rate moves cumulative net after it.
+    """
+    first = first_cost_index(book)
+    if first is None:
+        return None
+    if payback_index(book.net, first) is not None:
+        return 0
+    cumulative_at_deadline = sum(book.net[: book.horizon_len])
+    rate = book.run_rate_net
+    if rate <= EPS:
+        return None  # the run rate never closes the gap
+    k = max(1, math.ceil(-cumulative_at_deadline / rate - EPS))
+    return k if k <= cap else None
+
+
+def extend_past_deadline(book: Book, extra_months: int) -> Book:
+    """Return a copy with extra_months of run-rate months after the deadline. The original is not changed.
+
+    After the deadline: no staffing (required and staffed FTE are 0), adoption and coverage hold at their
+    deadline values, benefit and recurring cost repeat the deadline month, and one-off costs are zero.
+    """
+    if extra_months < 0:
+        raise ValueError("extra_months must be >= 0")
+    h = book.horizon_len
+    last = h - 1
+    last_month = book.months[last]
+    new_months = [format_month(parse_month(last_month) + k) for k in range(1, extra_months + 1)]
+    n = extra_months
+    return Book(
+        months=book.months[:h] + new_months,
+        adoption=book.adoption[:h] + [book.adoption[last]] * n,
+        required=book.required[:h] + [0.0] * n,
+        staffed=book.staffed[:h] + [0.0] * n,
+        coverage=book.coverage[:h] + [book.coverage[last]] * n,
+        benefit=book.benefit[:h] + [book.benefit[last]] * n,
+        one_off=book.one_off[:h] + [0.0] * n,
+        recurring=book.recurring[:h] + [book.recurring[last]] * n,
+        freed_fte=book.freed_fte[:h] + [book.freed_fte[last]] * n,
+        items=book.items,
+        horizon_len=h,
+    )
+
+
+def extend_for_payback(books: Mapping[Hashable, Book]) -> dict[Hashable, Book]:
+    """Extend every book by the same number of months, so all scenarios share one series length.
+
+    The length is the latest payback among the scenarios that reach payback (within the cap). Scenarios
+    that do not reach payback are extended over the same months, so their decline or flat line stays visible.
+    Books that already pay back inside the deadline are extended too, so cumulative charts line up by index.
+    """
+    needed = [months_after_deadline_to_payback(b) for b in books.values()]
+    reachable = [k for k in needed if k is not None]
+    extra = max(reachable, default=0)
+    return {key: extend_past_deadline(b, extra) for key, b in books.items()}

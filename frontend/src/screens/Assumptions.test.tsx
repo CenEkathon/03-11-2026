@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { Assumptions } from "./Assumptions";
 import { ASSUMPTIONS, makeControls, makeShared } from "../test/fixtures";
+import { renderWithTheme } from "../test/render";
 
 function deferred<T>() {
   let resolve: (v: T) => void = () => undefined;
@@ -18,15 +19,15 @@ function input(label: string): HTMLInputElement {
 }
 
 describe("Assumptions screen", () => {
-  it("explains how to read the table and labels the inputs as mock", () => {
-    render(<Assumptions shared={makeShared()} controls={makeControls()} />);
+  it("explains how to read the table and says changes are not saved", () => {
+    renderWithTheme(<Assumptions shared={makeShared()} controls={makeControls()} />);
     expect(screen.getByText("How to read this table")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Assumptions" })).toBeTruthy();
-    expect(screen.getByText("MOCK").className).toBe("badge badge-mock");
+    expect(screen.getByText(/Changes are not saved on the server\./)).toBeTruthy();
   });
 
   it("shows each assumption with its low, base and high values in its own unit", () => {
-    render(<Assumptions shared={makeShared()} controls={makeControls()} />);
+    renderWithTheme(<Assumptions shared={makeShared()} controls={makeControls()} />);
     const saving = rowFor("Cost saving on AI-assisted reviews");
     expect(within(saving).getByText("25.0%")).toBeTruthy();
     expect(within(saving).getByText("35.0%").tagName).toBe("STRONG");
@@ -39,29 +40,29 @@ describe("Assumptions screen", () => {
   });
 
   it("states the rationale and key for each row", () => {
-    render(<Assumptions shared={makeShared()} controls={makeControls()} />);
+    renderWithTheme(<Assumptions shared={makeShared()} controls={makeControls()} />);
     const row = rowFor("Ramp-up days");
     expect(within(row).getByText("Mock rationale.")).toBeTruthy();
     expect(within(row).getByText("ramp_days").tagName).toBe("CODE");
   });
 
   it("fills the inputs with existing overrides and counts them in singular and plural", () => {
-    const { unmount } = render(
+    const { unmount } = renderWithTheme(
       <Assumptions shared={makeShared()} controls={makeControls({ overrides: { hire_cost: 4000 } })} />,
     );
     expect(input("One-off hire cost").value).toBe("4000");
     expect(input("Ramp-up days").value).toBe("");
-    expect(screen.getByText("1 base value overridden. Leave a field empty to keep the mock base.")).toBeTruthy();
+    expect(screen.getByText("1 base value overridden. Leave a field empty to keep the base value.")).toBeTruthy();
     unmount();
 
-    render(
+    renderWithTheme(
       <Assumptions shared={makeShared()} controls={makeControls({ overrides: { hire_cost: 4000, ramp_days: 9 } })} />,
     );
-    expect(screen.getByText("2 base values overridden. Leave a field empty to keep the mock base.")).toBeTruthy();
+    expect(screen.getByText("2 base values overridden. Leave a field empty to keep the base value.")).toBeTruthy();
   });
 
   it("describes the input unit and shows the mock base as the placeholder", () => {
-    render(<Assumptions shared={makeShared()} controls={makeControls()} />);
+    renderWithTheme(<Assumptions shared={makeShared()} controls={makeControls()} />);
     expect(input("Cost saving on AI-assisted reviews").placeholder).toBe("0.35");
     expect(input("Cost saving on AI-assisted reviews").getAttribute("aria-label")).toBe(
       "Your base value for Cost saving on AI-assisted reviews (share)",
@@ -72,7 +73,7 @@ describe("Assumptions screen", () => {
 
   it("sends the numeric edits, leaving out empty fields, and shows no errors on success", async () => {
     const applyAssumptions = vi.fn(async () => null);
-    render(<Assumptions shared={makeShared()} controls={makeControls({ applyAssumptions })} />);
+    renderWithTheme(<Assumptions shared={makeShared()} controls={makeControls({ applyAssumptions })} />);
     fireEvent.change(input("Cost saving on AI-assisted reviews"), { target: { value: "0.4" } });
     fireEvent.change(input("One-off hire cost"), { target: { value: "3500" } });
 
@@ -84,7 +85,7 @@ describe("Assumptions screen", () => {
 
   it("lists the values the server rejects and leaves the results on screen unchanged", async () => {
     const applyAssumptions = vi.fn(async () => ["hire_cost must be positive"]);
-    render(<Assumptions shared={makeShared()} controls={makeControls({ applyAssumptions })} />);
+    renderWithTheme(<Assumptions shared={makeShared()} controls={makeControls({ applyAssumptions })} />);
     fireEvent.click(screen.getByRole("button", { name: "Apply values" }));
 
     const alert = await screen.findByRole("alert");
@@ -95,7 +96,7 @@ describe("Assumptions screen", () => {
   it("disables both buttons and shows progress while the values are applied", async () => {
     const pending = deferred<string[] | null>();
     const applyAssumptions = vi.fn(() => pending.promise);
-    render(<Assumptions shared={makeShared()} controls={makeControls({ applyAssumptions })} />);
+    renderWithTheme(<Assumptions shared={makeShared()} controls={makeControls({ applyAssumptions })} />);
     fireEvent.click(screen.getByRole("button", { name: "Apply values" }));
 
     const busy = await screen.findByRole("button", { name: "Recalculating…" });
@@ -108,7 +109,7 @@ describe("Assumptions screen", () => {
 
   it("resets every input and asks for no overrides", async () => {
     const applyAssumptions = vi.fn(async () => null);
-    render(
+    renderWithTheme(
       <Assumptions shared={makeShared()} controls={makeControls({ overrides: { hire_cost: 4000 }, applyAssumptions })} />,
     );
     expect(input("One-off hire cost").value).toBe("4000");
@@ -120,13 +121,13 @@ describe("Assumptions screen", () => {
 
   it("shows the rejection from a reset too", async () => {
     const applyAssumptions = vi.fn(async () => ["cannot reset"]);
-    render(<Assumptions shared={makeShared()} controls={makeControls({ applyAssumptions })} />);
+    renderWithTheme(<Assumptions shared={makeShared()} controls={makeControls({ applyAssumptions })} />);
     fireEvent.click(screen.getByRole("button", { name: "Reset all" }));
     expect(await screen.findByText("cannot reset")).toBeTruthy();
   });
 
   it("uses the same assumption rows as the shared data", () => {
-    render(<Assumptions shared={makeShared()} controls={makeControls()} />);
+    renderWithTheme(<Assumptions shared={makeShared()} controls={makeControls()} />);
     expect(screen.getAllByRole("row")).toHaveLength(ASSUMPTIONS.length + 1);
   });
 });

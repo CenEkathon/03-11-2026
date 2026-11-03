@@ -20,6 +20,7 @@ MappingMethod = Literal[
     "alias_title", "alias_description", "generic_title", "generic_description", "unmapped"
 ]
 ShortfallReason = Literal["no_eligible_supply", "lead_time_too_short", "hire_not_started"]
+Lang = Literal["en", "nl"]
 Confidence = Literal["low", "medium", "high"]
 
 REVIEW_FLAG = "HR / legal / employee-representation review required"
@@ -235,17 +236,20 @@ class MonthlyPoint(BaseModel):
     net_eur: float
     cumulative_net_eur: float
     freed_capacity_fte_aggregate: float  # aggregate only, flagged for review
+    after_deadline: bool = False  # True for run-rate months after the deadline (no staffing, no one-off cost)
 
 
 class Totals(BaseModel):
-    cost_one_off_eur: float
-    cost_recurring_eur: float
+    cost_one_off_eur: float  # through the deadline
+    cost_recurring_eur: float  # through the deadline
     cost_total_eur: float
-    benefit_eur: float
+    benefit_eur: float  # through the deadline
     net_eur: float
-    roi: float | None  # (benefit - cost) / cost; None if cost is 0
-    payback_month: str | None  # first month cumulative net >= 0 within the deadline horizon
-    run_rate_net_eur_year: float  # last month's benefit minus recurring cost, x 12. Simple, not a forecast
+    roi: float | None  # (benefit - cost) / cost through the deadline; None if cost is 0
+    payback_month: str | None  # first month cumulative net >= 0 (may be after the deadline); None if not reached
+    payback_within_deadline: bool
+    payback_months_after_deadline: int | None  # 0 if reached in the deadline month or earlier; None if not reached
+    run_rate_net_eur_year: float  # deadline month's benefit minus recurring cost, x 12. Simple, not a forecast
     unmet_fte_months: float
     freed_capacity_fte_peak: float
     freed_capacity_flag: str = REVIEW_FLAG
@@ -301,6 +305,7 @@ class BriefRequest(BaseModel):
     case: CaseId = "base"
     milestone_dates: dict[str, MilestoneDates] | None = None
     assumption_overrides: dict[str, float] | None = None
+    lang: Lang = "en"  # language of the drafted text only; the numbers do not change
 
 
 class Usage(BaseModel):

@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import { ThemeProvider } from "./theme/ThemeProvider";
+import { LanguageProvider } from "./i18n/LanguageProvider";
 
 vi.mock("react-dom/client", () => ({
   createRoot: vi.fn(() => ({ render: vi.fn() })),
@@ -18,7 +19,7 @@ afterEach(() => {
 });
 
 describe("app entry point", () => {
-  it("mounts the app into #root inside strict mode and the theme provider", async () => {
+  it("mounts the app into #root inside strict mode, the language and the theme provider", async () => {
     const root = document.createElement("div");
     root.id = "root";
     document.body.appendChild(root);
@@ -31,9 +32,11 @@ describe("app entry point", () => {
 
     const strict = render.mock.calls[0][0];
     expect(strict.type).toBe(StrictMode);
-    const provider = (strict.props as { children: ReactElement }).children;
-    expect(provider.type).toBe(ThemeProvider);
-    const app = (provider.props as { children: ReactElement }).children;
+    const language = (strict.props as { children: ReactElement }).children;
+    expect(language.type).toBe(LanguageProvider);
+    const theme = (language.props as { children: ReactElement }).children;
+    expect(theme.type).toBe(ThemeProvider);
+    const app = (theme.props as { children: ReactElement }).children;
     expect(app.type).toBe(App);
   });
 });

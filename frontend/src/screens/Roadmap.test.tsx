@@ -224,3 +224,22 @@ describe("Roadmap timeline and plan changes", () => {
     expect(screen.getByText("Deadline Dec 2028")).toBeTruthy();
   });
 });
+
+describe("Roadmap owner for an unknown team", () => {
+  it("shows n/a when a milestone's owner team is not in the company", () => {
+    const plan = makePlan();
+    plan.milestones = plan.milestones.map((m) => ({ ...m, owner_team: "NOT_A_TEAM" }));
+    renderRoadmap(makeControls(), makeShared({ plan }));
+    expect(screen.getAllByText("n/a").length).toBeGreaterThan(0);
+  });
+});
+
+describe("Roadmap while a new plan arrives", () => {
+  it("renders the new plan's milestones after the drafts catch up with them", () => {
+    const { rerender } = renderRoadmap(makeControls(), makeShared());
+    const next = makePlan();
+    next.milestones = next.milestones.map((m) => ({ ...m, id: `${m.id}-NEW` }));
+    rerender(<Roadmap shared={makeShared({ plan: next })} controls={makeControls()} />);
+    expect(screen.getAllByText("M1-NEW").length).toBeGreaterThan(0);
+  });
+});

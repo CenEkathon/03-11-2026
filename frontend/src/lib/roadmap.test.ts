@@ -71,3 +71,25 @@ describe("rowErrors", () => {
     expect(rowErrors(bad)).toEqual({ M1: ["M1: end 2027-02 is before start 2027-05"] });
   });
 });
+
+describe("localizeTimingError", () => {
+  it("passes each known timing message through in English, with its values filled in", async () => {
+    const { localizeTimingError } = await import("./roadmap");
+    const cases = [
+      "M2: start must be a month (YYYY-MM)",
+      "M2: end must be a month (YYYY-MM)",
+      "M2: end 2027-03 is before start 2027-06",
+      "M2: unknown dependency M9",
+      "M2 starts 2027-03, which is not after M1 ends 2027-03 (finish-to-start)",
+      "M2: 2031-01..2031-03 is outside the horizon 2027-01..2028-12",
+      "dependency cycle detected",
+      "duplicate milestone ids",
+    ];
+    for (const message of cases) expect(localizeTimingError(message)).toBe(message);
+  });
+
+  it("returns unknown messages unchanged", async () => {
+    const { localizeTimingError } = await import("./roadmap");
+    expect(localizeTimingError("something new from the server")).toBe("something new from the server");
+  });
+});

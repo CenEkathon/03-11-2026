@@ -13,12 +13,12 @@ import { Roadmap } from "./screens/Roadmap";
 import { Workforce } from "./screens/Workforce";
 import { Intake, type IntakeInput } from "./screens/Intake";
 import { analysisStepAt, MOCK_ANALYSIS_DELAY_MS } from "./lib/analysisSteps";
+import { t } from "./i18n/i18n";
+import { useLang } from "./i18n/LanguageProvider";
 
 
-/**
- * The app starts on intake. The plan only loads after the mock analysis has been started. The analysing stage
- * carries the intake input, so the splash can always show what was sent.
- */
+/** The app starts on intake. The plan only loads after the mock analysis has been started. */
+/** Where the user is. The analysing stage carries its input, so the analysing screen never lacks it. */
 type Flow = { stage: "intake" } | { stage: "analyzing"; input: IntakeInput } | { stage: "ready" };
 
 function buildRequest(
@@ -34,10 +34,12 @@ function buildRequest(
 }
 
 function messageOf(e: unknown): string {
-  return e instanceof Error ? e.message : "Unknown error";
+  return e instanceof Error ? e.message : t("Unknown error");
 }
 
 export default function App() {
+  // Subscribes to the language so that every screen rebuilds its text when the language changes.
+  useLang();
   const [page, goToPage] = useHashPage();
   const [caseId, setCaseId] = useState<CaseId>("base");
   const [dates, setDates] = useState<Record<string, MilestoneDates>>({});
@@ -47,18 +49,17 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [flow, setFlow] = useState<Flow>({ stage: "intake" });
-  const stage = flow.stage;
 
   // Mock analysis: after the delay the app becomes navigable. Cleared on unmount (StrictMode safe).
   useEffect(() => {
-    if (stage !== "analyzing") return;
+    if (flow.stage !== "analyzing") return;
     const timer = window.setTimeout(() => setFlow({ stage: "ready" }), MOCK_ANALYSIS_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [stage]);
+  }, [flow.stage]);
 
   // Bootstrap: reference data and the default plan. Starts once the user has sent the intake. Cancelled on unmount.
   useEffect(() => {
-    if (stage === "intake") return;
+    if (flow.stage === "intake") return;
     let cancelled = false;
     (async () => {
       try {
@@ -80,7 +81,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [stage]);
+  }, [flow.stage]);
 
   const onIntakeSubmit = (input: IntakeInput) => {
     setFlow({ stage: "analyzing", input });
@@ -104,8 +105,7 @@ export default function App() {
       setDates(d);
       setOverrides(o);
       setGlobalError(null);
-      // Edits are only possible once shared has loaded (controls exist), so prev is never null here.
-      setShared((prev) => ({ ...prev!, plan, sensitivity }));
+      setShared((prev) => ({ ...prev!, plan, sensitivity })); // controls exist only once shared has loaded
       return null;
     } catch (e) {
       if (e instanceof ApiError && e.status === 422) return e.validationErrors();
@@ -143,7 +143,7 @@ export default function App() {
     },
     busy,
     edited,
-    navigable: stage === "ready",
+    navigable: flow.stage === "ready",
   };
 
   let content: ReactNode;
@@ -154,15 +154,15 @@ export default function App() {
   } else if (loadError) {
     content = (
       <>
-        <PageHeader title="The plan could not load" />
-        <Callout tone="critical" title={`Could not reach the API at ${API_BASE}`}>
+        <PageHeader title={t("The plan could not load")} />
+        <Callout tone="critical" title={t("Could not reach the API at {url}", { url: API_BASE })}>
           <p>{loadError}</p>
           <p>
-            Start the backend from <code>backend/</code> with <code>uv run uvicorn strategy_compiler.api:app --port 8000</code>, then
-            try again.
+            {t("Start the backend from")} <code>backend/</code> {t("with")}{" "}
+            <code>uv run uvicorn strategy_compiler.api:app --port 8000</code>, {t("then try again.")}
           </p>
           <button type="button" className="btn" onClick={() => window.location.reload()}>
-            Try again
+            {t("Try again")}
           </button>
         </Callout>
       </>
@@ -174,7 +174,7 @@ export default function App() {
       <>
         {globalError ? (
           <div className="stack-sm">
-            <Callout tone="critical" title="The last recalculation failed. The results on screen are from before it.">
+            <Callout tone="critical" title={t("The last recalculation failed. The results on screen are from before it.")}>
               {globalError}
             </Callout>
           </div>
@@ -207,12 +207,12 @@ function AnalyzingScreen({ input }: { input: IntakeInput }) {
 
   return (
     <>
-      <PageHeader title="Analysing your brief" lead="Mock analysis in progress. This is a simulated model call and takes about seven seconds." />
+      <PageHeader title={t("Analysing your brief")} lead={t("Analysing the brief. This takes about seven seconds.")} />
       <div className="skeleton-page">
-        <Card title="Working">
+        <Card title={t("Working")}>
           <p className="analysis-splash" role="status" aria-live="polite">
             <span key={step} className="analysis-splash-text">
-              {step}…
+              {t(step)}…
             </span>
           </p>
           <div className="skeleton-lines" aria-hidden="true">
@@ -221,11 +221,11 @@ function AnalyzingScreen({ input }: { input: IntakeInput }) {
             <span />
           </div>
         </Card>
-        <Card title="Received">
+        <Card title={t("Received")}>
           <ul className="analysis-received">
-            <li>Brief: {input.text.length} characters</li>
+            <li>{t("Brief: {count} characters", { count: input.text.length })}</li>
             <li>
-              Workers: <strong>{input.fileName}</strong>, {input.workers.rowCount} rows
+              {t("Workers:")} <strong>{input.fileName}</strong>, {t("{count} rows", { count: input.workers.rowCount })}
             </li>
           </ul>
           <div className="skeleton-lines" aria-hidden="true">
@@ -242,8 +242,8 @@ function AnalyzingScreen({ input }: { input: IntakeInput }) {
 function LoadingSkeleton() {
   return (
     <div className="skeleton-page" role="status" aria-live="polite">
-      <span className="sr-only">Loading the mock plan from the API…</span>
-      <Card title="Loading">
+      <span className="sr-only">{t("Loading the plan…")}</span>
+      <Card title={t("Loading")}>
         <div className="skeleton-lines" aria-hidden="true">
           <span />
           <span />

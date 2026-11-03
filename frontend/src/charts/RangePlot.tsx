@@ -1,4 +1,5 @@
 import { formatEur, formatEurCompact } from "../lib/format";
+import { t } from "../i18n/i18n";
 import type { RangeRow } from "../lib/viewModels";
 
 /**
@@ -29,7 +30,16 @@ export function RangePlot({
       {rows.map((r) => (
         <div className="range-row" key={r.scenario}>
           <div className="range-label">{label(r.scenario)}</div>
-          <div className="range-track" role="img" aria-label={`${label(r.scenario)}: base ${formatEur(r.base)}, range ${formatEur(r.low)} to ${formatEur(r.high)}`}>
+          <div
+            className="range-track"
+            role="img"
+            aria-label={t("{label}: base {base}, range {low} to {high}", {
+              label: label(r.scenario),
+              base: formatEur(r.base),
+              low: formatEur(r.low),
+              high: formatEur(r.high),
+            })}
+          >
             <span className="range-zero" style={{ left: `${pos(0)}%` }} aria-hidden="true" />
             <span
               className="range-bar"
@@ -45,7 +55,7 @@ export function RangePlot({
           <div className="range-values">
             <strong>{formatEur(r.base)}</strong>
             <span className="muted small">
-              {formatEurCompact(r.low)} to {formatEurCompact(r.high)}
+              {t("{low} to {high}", { low: formatEurCompact(r.low), high: formatEurCompact(r.high) })}
             </span>
           </div>
         </div>

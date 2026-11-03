@@ -1,5 +1,6 @@
 import { monthIndex } from "../lib/months";
-import { formatMonth, formatPct } from "../lib/format";
+import { formatMonth, formatPct, monthShortName } from "../lib/format";
+import { t } from "../i18n/i18n";
 
 export interface TimelineRow {
   id: string;
@@ -11,8 +12,6 @@ export interface TimelineRow {
   /** AI-assisted share reached at the end of the milestone. Shown inside the bar. */
   share: number;
 }
-
-const MONTH_LETTERS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /**
  * Gantt-style roadmap built from CSS grid. One column per month. Bars follow the draft dates, so the
@@ -50,7 +49,7 @@ export function Timeline({
   const totalRows = headerRows + rows.length;
 
   return (
-    <div className="timeline" role="group" aria-label="Roadmap timeline">
+    <div className="timeline" role="group" aria-label={t("Roadmap timeline")}>
       <div
         className="timeline-grid"
         style={{
@@ -60,7 +59,7 @@ export function Timeline({
       >
         {/* header: years and months */}
         <div className="tl-corner" style={{ gridColumn: 1, gridRow: `1 / span ${headerRows}` }}>
-          Milestone
+          {t("Milestone")}
         </div>
         {years.map((y) => (
           <div key={y.year} className="tl-year" style={{ gridColumn: `${y.from} / ${y.to + 1}`, gridRow: 1 }}>
@@ -69,7 +68,7 @@ export function Timeline({
         ))}
         {months.map((ym, i) => (
           <div key={ym} className="tl-month" style={{ gridColumn: i + 2, gridRow: 2 }} title={formatMonth(ym)}>
-            {MONTH_LETTERS[Number(ym.slice(5, 7)) - 1]}
+            {monthShortName(Number(ym.slice(5, 7)))}
           </div>
         ))}
 
@@ -90,7 +89,7 @@ export function Timeline({
             style={{ gridColumn: deadlineCol, gridRow: `${headerRows + 1} / ${totalRows + 1}` }}
             aria-hidden="true"
           >
-            <span>Deadline {formatMonth(deadline.slice(0, 7))}</span>
+            <span>{t("Deadline {month}", { month: formatMonth(deadline.slice(0, 7)) })}</span>
           </div>
         ) : null}
 
@@ -106,14 +105,16 @@ export function Timeline({
               <div className="tl-label" style={{ gridColumn: 1, gridRow: r }}>
                 <div className="tl-label-top">
                   <span className="tl-id">{row.id}</span>
-                  <span className="tl-name">{row.name}</span>
+                  <span className="tl-name">{t(row.name)}</span>
                 </div>
                 <div className="tl-label-sub">
-                  {row.owner}
-                  {row.dependsOn.length ? ` · after ${row.dependsOn.join(", ")}` : " · starts the plan"}
+                  {t(row.owner)}
+                  {row.dependsOn.length
+                    ? t(" · after {deps}", { deps: row.dependsOn.join(", ") })
+                    : t(" · starts the plan")}
                 </div>
                 <div className="tl-label-dates">
-                  {valid ? `${formatMonth(row.start)} – ${formatMonth(row.end)}` : "Dates not set"}
+                  {valid ? `${formatMonth(row.start)} – ${formatMonth(row.end)}` : t("Dates not set")}
                 </div>
               </div>
               {valid ? (
@@ -121,13 +122,19 @@ export function Timeline({
                   className="tl-bar"
                   style={{ gridColumn: `${s} / ${e + 1}`, gridRow: r }}
                   role="img"
-                  aria-label={`${row.id} ${row.name}: ${formatMonth(row.start)} to ${formatMonth(row.end)}. AI-assisted share ${formatPct(row.share, 0)} at end.`}
+                  aria-label={t("{id} {name}: {start} to {end}. AI-assisted share {share} at end.", {
+                    id: row.id,
+                    name: t(row.name),
+                    start: formatMonth(row.start),
+                    end: formatMonth(row.end),
+                    share: formatPct(row.share, 0),
+                  })}
                 >
                   <span className="tl-bar-text">{formatPct(row.share, 0)}</span>
                 </div>
               ) : (
                 <div className="tl-invalid" style={{ gridColumn: `2 / ${lastCol + 1}`, gridRow: r }}>
-                  Enter valid months to draw this milestone.
+                  {t("Enter valid months to draw this milestone.")}
                 </div>
               )}
             </div>

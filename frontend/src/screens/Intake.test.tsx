@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { Intake } from "./Intake";
 import { SAMPLE_BRIEFS } from "../lib/sampleBriefs";
+import { renderWithTheme } from "../test/render";
 
 /** A File-like object for the file input. Only the parts the screen reads are provided. */
 function csvFile(name: string, text: string) {
@@ -21,15 +22,13 @@ const CSV = "employee_id,team,level\nEMP-0001,AML,2\nEMP-0002,KYC,3\n";
 
 describe("Intake form", () => {
   it("starts with an empty brief, no file and a disabled submit button", () => {
-    render(<Intake onSubmit={() => undefined} />);
+    renderWithTheme(<Intake onSubmit={() => undefined} />);
     expect(screen.getByRole("button", { name: "Send for analysis" }).hasAttribute("disabled")).toBe(true);
     expect((screen.getByLabelText("Brief") as HTMLTextAreaElement).value).toBe("");
-    expect(screen.getByText("MOCK").className).toBe("badge badge-mock");
-    expect(screen.getByText("SYNTHETIC").className).toBe("badge badge-synthetic");
   });
 
   it("fills the brief from each demo sample", () => {
-    render(<Intake onSubmit={() => undefined} />);
+    renderWithTheme(<Intake onSubmit={() => undefined} />);
     const group = screen.getByRole("group", { name: "Fill the brief with a sample (demo)" });
     for (const sample of SAMPLE_BRIEFS) {
       fireEvent.click(within(group).getByRole("button", { name: sample.label }));
@@ -38,7 +37,7 @@ describe("Intake form", () => {
   });
 
   it("summarises an accepted CSV and enables submit once the brief has text", async () => {
-    render(<Intake onSubmit={() => undefined} />);
+    renderWithTheme(<Intake onSubmit={() => undefined} />);
     attach(fileInput(), [csvFile("workers.csv", CSV)]);
 
     const status = await screen.findByText(/workers.csv/);
@@ -51,7 +50,7 @@ describe("Intake form", () => {
 
   it("submits the trimmed brief with the file name and worker summary", async () => {
     const onSubmit = vi.fn();
-    render(<Intake onSubmit={onSubmit} />);
+    renderWithTheme(<Intake onSubmit={onSubmit} />);
     attach(fileInput(), [csvFile("workers.csv", CSV)]);
     await screen.findByText(/workers.csv/);
     fireEvent.change(screen.getByLabelText("Brief"), { target: { value: "  Goal text  " } });
@@ -66,7 +65,7 @@ describe("Intake form", () => {
 
   it("does not submit when the form is sent without a file or without a brief", async () => {
     const onSubmit = vi.fn();
-    const { container } = render(<Intake onSubmit={onSubmit} />);
+    const { container } = renderWithTheme(<Intake onSubmit={onSubmit} />);
     const form = container.querySelector("form")!;
 
     fireEvent.submit(form);
@@ -79,7 +78,7 @@ describe("Intake form", () => {
   });
 
   it("rejects a file that is not a CSV and clears any earlier attachment", async () => {
-    render(<Intake onSubmit={() => undefined} />);
+    renderWithTheme(<Intake onSubmit={() => undefined} />);
     attach(fileInput(), [csvFile("workers.csv", CSV)]);
     await screen.findByText(/workers.csv/);
 
@@ -91,7 +90,7 @@ describe("Intake form", () => {
   });
 
   it("explains a CSV that cannot be summarised", async () => {
-    render(<Intake onSubmit={() => undefined} />);
+    renderWithTheme(<Intake onSubmit={() => undefined} />);
     attach(fileInput(), [csvFile("empty.csv", "")]);
     expect(await screen.findByText("The file is empty. Attach a CSV with a header row and worker rows.")).toBeTruthy();
     expect(fileInput().getAttribute("aria-invalid")).toBe("true");
@@ -100,7 +99,7 @@ describe("Intake form", () => {
   it("shows a reading message while the file is read, then the summary", async () => {
     let release: (text: string) => void = () => undefined;
     const slow = { name: "slow.csv", text: () => new Promise<string>((resolve) => (release = resolve)) };
-    render(<Intake onSubmit={() => undefined} />);
+    renderWithTheme(<Intake onSubmit={() => undefined} />);
     attach(fileInput(), [slow]);
 
     expect(await screen.findByText("Reading the file…")).toBeTruthy();
@@ -113,14 +112,14 @@ describe("Intake form", () => {
 
   it("reports a file that cannot be read", async () => {
     const broken = { name: "broken.csv", text: () => Promise.reject(new Error("disk")) };
-    render(<Intake onSubmit={() => undefined} />);
+    renderWithTheme(<Intake onSubmit={() => undefined} />);
     attach(fileInput(), [broken]);
     expect(await screen.findByText("The file could not be read. Try attaching it again.")).toBeTruthy();
     await waitFor(() => expect(screen.queryByText("Reading the file…")).toBeNull());
   });
 
   it("clears the attachment when the file picker is emptied", async () => {
-    render(<Intake onSubmit={() => undefined} />);
+    renderWithTheme(<Intake onSubmit={() => undefined} />);
     attach(fileInput(), [csvFile("workers.csv", CSV)]);
     await screen.findByText(/workers.csv/);
 
@@ -130,7 +129,7 @@ describe("Intake form", () => {
   });
 
   it("treats a picker with no file list as an empty selection", async () => {
-    render(<Intake onSubmit={() => undefined} />);
+    renderWithTheme(<Intake onSubmit={() => undefined} />);
     attach(fileInput(), [csvFile("workers.csv", CSV)]);
     await screen.findByText(/workers.csv/);
 

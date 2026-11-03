@@ -29,7 +29,7 @@ def test_skills_endpoint_lists_taxonomy_with_mock_label(client):
     body = client.get("/api/skills").json()
     assert len(body["skills"]) == 9
     assert {"id", "label", "family", "esco_uri"} <= set(body["skills"][0])
-    assert body["labels"]["taxonomy"].startswith("MOCK")
+    assert body["labels"]["taxonomy"].startswith("Curated skill taxonomy")
 
 
 def test_unknown_team_returns_404(client):

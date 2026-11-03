@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import { AppShell } from "./AppShell";
 import { ThemeProvider } from "../theme/ThemeProvider";
 import type { PageId } from "../routing";
+import { renderWithTheme } from "../test/render";
 
 function renderShell(overrides: Partial<Parameters<typeof AppShell>[0]> = {}) {
   const props = {
@@ -16,7 +17,7 @@ function renderShell(overrides: Partial<Parameters<typeof AppShell>[0]> = {}) {
     children: <p>Screen content</p>,
     ...overrides,
   };
-  render(
+  renderWithTheme(
     <ThemeProvider>
       <AppShell {...props} />
     </ThemeProvider>,
@@ -96,37 +97,9 @@ describe("AppShell theme and labels", () => {
     expect(document.documentElement.dataset.theme).toBeUndefined();
   });
 
-  it("states the demo-data notice and the fictional company name", () => {
+  it("states the illustrative-demo footer and names the company in the top bar", () => {
     renderShell();
-    expect(screen.getByRole("note").textContent).toContain("The company, goal, roadmap and assumptions are mock.");
-    expect(screen.getByText("KBC (mock example, not real KBC data)")).toBeTruthy();
-  });
-
-  it("opens and closes the label legend", () => {
-    const { container } = render(
-      <ThemeProvider>
-        <AppShell
-          page="overview"
-          onNavigate={() => undefined}
-          caseId="base"
-          onCaseChange={() => undefined}
-          busy={false}
-          edited={false}
-          navigable
-        >
-          <p>x</p>
-        </AppShell>
-      </ThemeProvider>,
-    );
-    const dialog = container.querySelector("dialog") as HTMLDialogElement;
-    expect(dialog.open).toBe(false);
-
-    fireEvent.click(screen.getByRole("button", { name: "What do the labels mean?" }));
-    expect(dialog.open).toBe(true);
-    expect(screen.getByText("Generated workforce. Fictional people with IDs only. No names, no real employees.")).toBeTruthy();
-    expect(screen.getAllByText("ESTIMATE").length).toBeGreaterThan(0);
-
-    fireEvent.click(screen.getByRole("button", { name: "Close" }));
-    expect(dialog.open).toBe(false);
+    expect(screen.getByText(/Illustrative demo: the company, goal, roadmap, workforce and figures are invented assumptions/)).toBeTruthy();
+    expect(screen.getByText("KBC")).toBeTruthy();
   });
 });

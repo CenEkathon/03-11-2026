@@ -4,7 +4,7 @@ import { Overview } from "./Overview";
 import { makeControls, makePlan, makeShared, scenarioFor } from "../test/fixtures";
 import { kpiValue, renderWithTheme } from "../test/render";
 import { allOf, lastOf, resetRecorded } from "../test/rechartsStub";
-import { formatEur, formatMonth, formatPct } from "../lib/format";
+import { formatEur, formatMonth } from "../lib/format";
 
 vi.mock("recharts", () => import("../test/rechartsStub"));
 
@@ -20,18 +20,15 @@ function renderOverview(shared = makeShared(), controls = makeControls()) {
 }
 
 describe("Overview", () => {
-  it("shows the mock goal with its title stripped of the MOCK prefix and the mock badge", () => {
+  it("shows the goal title and its statement", () => {
     renderOverview();
-    expect(screen.getByRole("region", { name: "AI-assisted KYC and AML reviews" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "AI-assisted KYC reviews" })).toBeTruthy();
     expect(screen.getByText("Mock statement for the demo. Not a real strategy.")).toBeTruthy();
-    expect(within(screen.getByRole("region", { name: "AI-assisted KYC and AML reviews" })).getByText("MOCK").className).toBe(
-      "badge badge-mock",
-    );
   });
 
   it("compares the goal with the modelled share and cost per review", () => {
     renderOverview();
-    const goal = screen.getByRole("region", { name: "AI-assisted KYC and AML reviews" });
+    const goal = screen.getByRole("region", { name: "AI-assisted KYC reviews" });
     expect(within(goal).getByText("0%")).toBeTruthy();
     expect(within(goal).getByText("60% by Dec 2028")).toBeTruthy();
     expect(within(goal).getByText("60% modelled at deadline")).toBeTruthy();
@@ -46,46 +43,41 @@ describe("Overview", () => {
   it("does not warn when an override makes the modelled reduction reach the target", () => {
     renderOverview(makeShared(), makeControls({ overrides: { ai_cost_saving_pct: 0.6 } }));
     expect(screen.queryByText(/short of the 35% target/)).toBeNull();
-    const goal = screen.getByRole("region", { name: "AI-assisted KYC and AML reviews" });
+    const goal = screen.getByRole("region", { name: "AI-assisted KYC reviews" });
     // 60% saving x 60% share = 36% reduction, so cost per review is 48 x 0.64.
     expect(within(goal).getByText("EUR 30.72 modelled (−36%)").className).toBe("kpi-sub");
   });
 
-  it("shows the recommended option's cost, benefit, net, ROI and payback as KPIs", () => {
+  it("shows the recommended option's benefit, net, payback and run rate as KPIs", () => {
     renderOverview();
-    expect(kpiValue("Cost to deadline")).toBe(formatEur(HYBRID.cost_total_eur));
     expect(kpiValue("Benefit to deadline")).toBe(formatEur(HYBRID.benefit_eur));
     expect(kpiValue("Net to deadline")).toBe(formatEur(HYBRID.net_eur));
-    expect(kpiValue("ROI to deadline")).toBe(formatPct(HYBRID.roi));
-    expect(kpiValue("Payback")).toBe("Not by deadline");
+    expect(kpiValue("Payback")).toBe("Not reached");
     expect(kpiValue("Yearly net at Dec 2028 run rate")).toBe(formatEur(HYBRID.run_rate_net_eur_year));
   });
 
-  it("colours negative net and ROI as bad, and shows a payback month when the option pays back", () => {
+  it("shows a payback month and no bad tone when the option pays back within the deadline", () => {
     const plan = makePlan();
     plan.scenarios.hybrid = scenarioFor("hybrid", {
-      totals: { ...HYBRID, payback_month: "2028-03", net_eur: 5000, roi: 0.1, run_rate_net_eur_year: 1000 },
+      totals: { ...HYBRID, payback_month: "2028-03", payback_within_deadline: true, net_eur: 5000, run_rate_net_eur_year: 1000 },
     });
     renderOverview(makeShared({ plan }));
     expect(kpiValue("Payback")).toBe(formatMonth("2028-03"));
     expect(document.querySelectorAll(".kpi-value.kpi-bad")).toHaveLength(0);
-    expect(kpiValue("ROI to deadline")).toBe("10.0%");
   });
 
-  it("marks a negative net and ROI as bad", () => {
+  it("marks a negative net as bad", () => {
     renderOverview();
     const net = Array.from(document.querySelectorAll(".kpi")).find((k) => k.querySelector(".kpi-label")?.textContent === "Net to deadline");
     expect(net?.querySelector(".kpi-value")?.className).toBe("kpi-value kpi-bad");
-    const roi = Array.from(document.querySelectorAll(".kpi")).find((k) => k.querySelector(".kpi-label")?.textContent === "ROI to deadline");
-    expect(roi?.querySelector(".kpi-value")?.className).toBe("kpi-value kpi-bad");
   });
 
   it("lists the findings for the recommended option with their tones", () => {
     renderOverview();
     const findings = screen.getByRole("region", { name: "What needs attention" });
-    expect(within(findings).getByText("No payback before the deadline").closest(".callout")?.className).toBe("callout callout-warning");
+    expect(within(findings).getByText("No payback within 20 years").closest(".callout")?.className).toBe("callout callout-warning");
     expect(within(findings).getByText("Every requirement is covered").closest(".callout")?.className).toBe("callout callout-success");
-    expect(within(findings).getByText(/Constraints from the mock goal: No forced redundancies; Model-risk gate before scale-up\./)).toBeTruthy();
+    expect(within(findings).getByText(/Constraints: No forced redundancies; Model-risk gate before scale-up\./)).toBeTruthy();
   });
 
   it("maps freed capacity to an info finding with its review flag", () => {
@@ -114,7 +106,7 @@ describe("Overview", () => {
     const plan = makePlan();
     plan.goal = { ...plan.goal, constraints: [] };
     renderOverview(makeShared({ plan }));
-    expect(screen.queryByText(/Constraints from the mock goal/)).toBeNull();
+    expect(screen.queryByText(/Constraints:/)).toBeNull();
   });
 
   it("says the recommended option is cheapest only when it is", () => {
@@ -158,7 +150,7 @@ describe("Overview", () => {
     const rows = within(compare).getAllByRole("row");
     expect(rows).toHaveLength(4);
     expect(within(rows[3]).getByText("Hybrid")).toBeTruthy();
-    expect(within(rows[3]).getByText("Not by deadline")).toBeTruthy();
+    expect(within(rows[3]).getByText("Not reached")).toBeTruthy();
 
     const share = screen.getByRole("table", { name: "AI-assisted share by month" });
     expect(within(share).getAllByRole("row")).toHaveLength(25);
@@ -170,7 +162,7 @@ describe("Overview", () => {
     plan.scenarios.hire_led = scenarioFor("hire_led", { totals: { ...plan.scenarios.hire_led.totals, payback_month: "2027-11" } });
     renderOverview(makeShared({ plan }));
     const compare = screen.getByRole("table", { name: "Options compared" });
-    expect(within(compare).getByText("Nov 2027")).toBeTruthy();
+    expect(within(compare).getByText(/^Nov 2027/)).toBeTruthy();
   });
 
   it("states the decisions for approval", () => {
@@ -184,4 +176,25 @@ describe("Overview", () => {
     expect(screen.getByRole("button", { name: "Draft brief" })).toBeTruthy();
   });
 
+});
+
+describe("Overview payback after the deadline", () => {
+  it("states how many months after the deadline the option pays back", () => {
+    const plan = makePlan();
+    plan.scenarios.hybrid = scenarioFor("hybrid", {
+      totals: { ...HYBRID, payback_month: "2029-03", payback_within_deadline: false, payback_months_after_deadline: 3 },
+    });
+    renderOverview(makeShared({ plan }));
+    expect(kpiValue("Payback")).toBe("Mar 2029");
+    expect(screen.getByText("3 months after the deadline")).toBeTruthy();
+  });
+
+  it("shows zero months when the count is missing", () => {
+    const plan = makePlan();
+    plan.scenarios.hybrid = scenarioFor("hybrid", {
+      totals: { ...HYBRID, payback_month: "2029-03", payback_within_deadline: false, payback_months_after_deadline: null },
+    });
+    renderOverview(makeShared({ plan }));
+    expect(screen.getByText("0 months after the deadline")).toBeTruthy();
+  });
 });

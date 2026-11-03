@@ -1,19 +1,22 @@
 import { useMemo, useState } from "react";
 import { CoverageChart } from "../charts/Charts";
-import { Callout, Card, ChartFigure, Dialog, DataTable, LabelBadge, PageHeader, Segmented, type Column } from "../components/ui";
+import { Callout, Card, ChartFigure, Dialog, DataTable, PageHeader, Segmented, type Column } from "../components/ui";
 import type { Shared } from "../appTypes";
 import { SCENARIO_IDS, type Requirement, type ScenarioId, type SkillFit } from "../api/types";
 import { formatFte, formatMonth, formatMonthRange } from "../lib/format";
 import { LEVEL_NAMES, REASON_LABEL, RECOMMENDED, SCENARIO_SHORT_LABEL } from "../lib/labels";
 import { coverageRows } from "../lib/viewModels";
+import { t } from "../i18n/i18n";
+import { useLang } from "../i18n/LanguageProvider";
 
 export function Workforce({ shared }: { shared: Shared }) {
+  useLang();
   const { plan, skillLabels, caseInfo } = shared;
   const [scenario, setScenario] = useState<ScenarioId>(RECOMMENDED);
-  const [milestoneId, setMilestoneId] = useState<string>(plan.milestones[0].id);
+  const [milestoneId, setMilestoneId] = useState<string>(plan.milestones[0].id); // a plan always has milestones
   const [evidenceFor, setEvidenceFor] = useState<string | null>(null);
 
-  const teamName = useMemo(() => Object.fromEntries(caseInfo.company.teams.map((t) => [t.id, t.name])), [caseInfo]);
+  const teamName = useMemo(() => Object.fromEntries(caseInfo.company.teams.map((tm) => [tm.id, tm.name])), [caseInfo]);
   const fitById = useMemo(() => new Map<string, SkillFit>(plan.skill_fit.map((f) => [f.requirement_id, f])), [plan.skill_fit]);
   const milestone = plan.milestones.find((m) => m.id === milestoneId) ?? plan.milestones[0];
   const result = plan.scenarios[scenario];
@@ -22,30 +25,35 @@ export function Workforce({ shared }: { shared: Shared }) {
   const evidenceReq = requirements.find((r) => r.id === evidenceFor) ?? null;
   const evidenceFit = evidenceReq ? fitById.get(evidenceReq.id) : undefined;
   const evidenceIds = evidenceFit?.evidence_employee_ids ?? [];
+  const scenarioLabel = t(SCENARIO_SHORT_LABEL[scenario]);
 
   const columns: Column<Requirement>[] = [
-    { key: "role", header: "Role (mock)", render: (r) => r.role },
-    { key: "skill", header: "Skill", render: (r) => skillLabels[r.skill_id] ?? r.skill_id },
-    { key: "level", header: "Min level", numeric: true, render: (r) => LEVEL_NAMES[r.min_proficiency] ?? `${r.min_proficiency} of 3` },
-    { key: "fte", header: "FTE", numeric: true, render: (r) => formatFte(r.fte) },
+    { key: "role", header: t("Role"), render: (r) => t(r.role) },
+    { key: "skill", header: t("Skill"), render: (r) => (skillLabels[r.skill_id] ? t(skillLabels[r.skill_id]) : r.skill_id) },
+    { key: "level", header: t("Min level"), numeric: true, render: (r) => LEVEL_NAMES[r.min_proficiency] ?? `${r.min_proficiency} of 3` },
+    { key: "fte", header: t("FTE"), numeric: true, render: (r) => formatFte(r.fte) },
     {
       key: "eligible",
-      header: "Eligible now",
+      header: t("Eligible now"),
       numeric: true,
-      render: (r) => <span title="People at or above the minimum level in a contributing team">{fitById.get(r.id)?.eligible_now ?? "n/a"}</span>,
+      render: (r) => (
+        <span title={t("People at or above the minimum level in a contributing team")}>
+          {fitById.get(r.id)?.eligible_now ?? t("n/a")}
+        </span>
+      ),
     },
-    { key: "reskill", header: "Reskill candidates", numeric: true, render: (r) => fitById.get(r.id)?.reskill_candidates ?? "n/a" },
+    { key: "reskill", header: t("Reskill candidates"), numeric: true, render: (r) => fitById.get(r.id)?.reskill_candidates ?? t("n/a") },
     {
       key: "teams",
-      header: "Eligible by team",
+      header: t("Eligible by team"),
       render: (r) => {
         const entries = Object.entries(fitById.get(r.id)?.team_coverage ?? {}).sort((a, b) => b[1] - a[1]);
-        if (entries.length === 0) return <span className="muted">None</span>;
+        if (entries.length === 0) return <span className="muted">{t("None")}</span>;
         return (
           <span className="team-chips">
             {entries.map(([team, n]) => (
               <span key={team} className="team-chip">
-                {teamName[team] ?? team} <strong>{n}</strong>
+                {teamName[team] ? t(teamName[team]) : team} <strong>{n}</strong>
               </span>
             ))}
           </span>
@@ -54,10 +62,10 @@ export function Workforce({ shared }: { shared: Shared }) {
     },
     {
       key: "evidence",
-      header: "Evidence",
+      header: t("Evidence"),
       render: (r) => (
         <button type="button" className="btn btn-small" onClick={() => setEvidenceFor(r.id)}>
-          View IDs
+          {t("View IDs")}
         </button>
       ),
     },
@@ -68,12 +76,14 @@ export function Workforce({ shared }: { shared: Shared }) {
   return (
     <>
       <PageHeader
-        title="Workforce"
-        lead="For each milestone: which roles and skills it needs, how many people in contributing teams already qualify, and whether the chosen option staffs it in time."
+        title={t("Workforce")}
+        lead={t(
+          "For each milestone: which roles and skills it needs, how many people in contributing teams already qualify, and whether the chosen option staffs it in time.",
+        )}
         actions={
           <Segmented
-            label="Option"
-            options={SCENARIO_IDS.map((id) => ({ value: id, label: SCENARIO_SHORT_LABEL[id] }))}
+            label={t("Option")}
+            options={SCENARIO_IDS.map((id) => ({ value: id, label: t(SCENARIO_SHORT_LABEL[id]) }))}
             value={scenario}
             onChange={setScenario}
           />
@@ -81,12 +91,15 @@ export function Workforce({ shared }: { shared: Shared }) {
       />
 
       <Card
-        title="Choose a milestone"
-        description={`${milestone.name}: ${formatMonthRange(milestone.start, milestone.end)}. Owner team: ${teamName[milestone.owner_team] ?? milestone.owner_team}.`}
-        actions={<LabelBadge labelKey="workforce" />}
+        title={t("Choose a milestone")}
+        description={t("{name}: {range}. Owner team: {team}.", {
+          name: t(milestone.name),
+          range: formatMonthRange(milestone.start, milestone.end),
+          team: teamName[milestone.owner_team] ? t(teamName[milestone.owner_team]) : milestone.owner_team,
+        })}
       >
         <Segmented
-          label="Milestone"
+          label={t("Milestone")}
           options={plan.milestones.map((m) => ({ value: m.id, label: m.id }))}
           value={milestone.id}
           onChange={setMilestoneId}
@@ -94,21 +107,23 @@ export function Workforce({ shared }: { shared: Shared }) {
       </Card>
 
       <Card
-        title="Required and staffed FTE, all milestones"
-        description={`${SCENARIO_SHORT_LABEL[scenario]} option. The shaded band is ${milestone.id}.`}
-        actions={<LabelBadge labelKey="workforce" />}
+        title={t("Required and staffed FTE, all milestones")}
+        description={t("{option} option. The shaded band is {id}.", { option: t(SCENARIO_SHORT_LABEL[scenario]), id: milestone.id })}
       >
         <ChartFigure
-          label={`Area and line chart of required FTE against staffed FTE by month for the ${SCENARIO_SHORT_LABEL[scenario]} option. ${milestone.id} is shaded.`}
-          note="Staffed FTE follows the chosen option. Where the line sits on the area, the need is met."
-          tableLabel="Show monthly FTE as table"
+          label={t(
+            "Area and line chart of required FTE against staffed FTE by month for the {option} option. {id} is shaded.",
+            { option: scenarioLabel, id: milestone.id },
+          )}
+          note={t("Staffed FTE follows the chosen option. Where the line sits on the area, the need is met.")}
+          tableLabel={t("Show monthly FTE as table")}
           table={
             <DataTable
-              caption="Required and staffed FTE by month"
+              caption={t("Required and staffed FTE by month")}
               columns={[
-                { key: "m", header: "Month", render: (r: (typeof coverage)[number]) => formatMonth(r.month) },
-                { key: "req", header: "Required FTE", numeric: true, render: (r) => formatFte(r.required) },
-                { key: "st", header: "Staffed FTE", numeric: true, render: (r) => formatFte(r.staffed) },
+                { key: "m", header: t("Month"), render: (r: (typeof coverage)[number]) => formatMonth(r.month) },
+                { key: "req", header: t("Required FTE"), numeric: true, render: (r) => formatFte(r.required) },
+                { key: "st", header: t("Staffed FTE"), numeric: true, render: (r) => formatFte(r.staffed) },
               ]}
               rows={coverage}
               rowKey={(r) => r.month}
@@ -120,28 +135,34 @@ export function Workforce({ shared }: { shared: Shared }) {
       </Card>
 
       <Card
-        title={`Requirements in ${milestone.id}`}
-        description="Eligible counts are people in contributing teams who already meet the minimum level. They are counts, not a ranking, and no one is selected."
-        actions={<LabelBadge labelKey="workforce" />}
+        title={t("Requirements in {id}", { id: milestone.id })}
+        description={t("Eligible counts are people in contributing teams who already meet the minimum level. They are counts, not a ranking, and no one is selected.")}
       >
         <div className="stack">
           {shortfalls.length === 0 ? (
-            <Callout tone="success" title="No shortfall for this milestone">
-              Every requirement is staffed in {SCENARIO_SHORT_LABEL[scenario]}.
+            <Callout tone="success" title={t("No shortfall for this milestone")}>
+              {t("Every requirement is staffed in {option}.", { option: scenarioLabel })}
             </Callout>
           ) : (
             shortfalls.map((s) => (
-              <Callout key={`${s.requirement_id}-${s.reason}`} tone="warning" title={`${s.requirement_id}: ${REASON_LABEL[s.reason]}`}>
-                {skillLabels[s.skill_id] ?? s.skill_id}. {formatFte(s.unmet_fte_months, 2)} unmet FTE-months.
+              <Callout
+                key={`${s.requirement_id}-${s.reason}`}
+                tone="warning"
+                title={t("{id}: {reason}", { id: s.requirement_id, reason: t(REASON_LABEL[s.reason]) })}
+              >
+                {t("{skill}. {fte} unmet FTE-months.", {
+                  skill: skillLabels[s.skill_id] ? t(skillLabels[s.skill_id]) : s.skill_id,
+                  fte: formatFte(s.unmet_fte_months, 2),
+                })}
               </Callout>
             ))
           )}
           <DataTable
-            caption={`Requirements in ${milestone.id}`}
+            caption={t("Requirements in {id}", { id: milestone.id })}
             columns={columns}
             rows={requirements}
             rowKey={(r) => r.id}
-            emptyText="No requirements for this milestone."
+            emptyText={t("No requirements for this milestone.")}
           />
         </div>
       </Card>
@@ -149,38 +170,42 @@ export function Workforce({ shared }: { shared: Shared }) {
       <Dialog
         open={evidenceReq !== null}
         onClose={() => setEvidenceFor(null)}
-        title={evidenceReq ? `Evidence for ${evidenceReq.id}: ${evidenceReq.role}` : "Evidence"}
+        title={evidenceReq ? t("Evidence for {id}: {role}", { id: evidenceReq.id, role: t(evidenceReq.role) }) : t("Evidence")}
       >
         {evidenceReq && evidenceFit ? (
           <div className="stack">
             <dl className="defs">
               <div>
-                <dt>Skill</dt>
-                <dd>{skillLabels[evidenceReq.skill_id] ?? evidenceReq.skill_id}</dd>
+                <dt>{t("Skill")}</dt>
+                <dd>{skillLabels[evidenceReq.skill_id] ? t(skillLabels[evidenceReq.skill_id]) : evidenceReq.skill_id}</dd>
               </div>
               <div>
-                <dt>Eligible now</dt>
-                <dd>{evidenceFit.eligible_now} people in contributing teams</dd>
+                <dt>{t("Eligible now")}</dt>
+                <dd>{t("{count} people in contributing teams", { count: evidenceFit.eligible_now })}</dd>
               </div>
               <div>
-                <dt>Reskill candidates</dt>
-                <dd>{evidenceFit.reskill_candidates} people, one or two levels short on an adjacent skill</dd>
+                <dt>{t("Reskill candidates")}</dt>
+                <dd>
+                  {t("{count} people, one or two levels short on an adjacent skill", { count: evidenceFit.reskill_candidates })}
+                </dd>
               </div>
               <div>
-                <dt>Mapping confidence</dt>
-                <dd>{Math.round(evidenceFit.mapping_confidence * 100)}% (curated taxonomy)</dd>
+                <dt>{t("Mapping confidence")}</dt>
+                <dd>{t("{pct}% (curated taxonomy)", { pct: Math.round(evidenceFit.mapping_confidence * 100) })}</dd>
               </div>
               <div>
-                <dt>Vacancy share, 2021</dt>
+                <dt>{t("Vacancy share, 2021")}</dt>
                 <dd>
                   {evidenceFit.vacancy_evidence_share === null
-                    ? "Not observed"
-                    : `${Math.round(evidenceFit.vacancy_evidence_share * 100)}% of deduplicated postings (external, not used in the arithmetic)`}
+                    ? t("Not observed")
+                    : t("{pct}% of deduplicated postings (2021, not used in the arithmetic)", {
+                        pct: Math.round(evidenceFit.vacancy_evidence_share * 100),
+                      })}
                 </dd>
               </div>
             </dl>
             <div>
-              <h3>Sample employee IDs (synthetic, up to 5)</h3>
+              <h3>{t("Sample employee IDs (up to 5)")}</h3>
               <p className="muted small">IDs are evidence for the count only. They are not a ranking and do not select anyone.</p>
               {evidenceIds.length ? (
                 <ul className="id-list">
@@ -191,11 +216,15 @@ export function Workforce({ shared }: { shared: Shared }) {
                   ))}
                 </ul>
               ) : (
-                <p className="muted small">None.</p>
+                <p className="muted small">{t("None.")}</p>
               )}
             </div>
             <p className="muted small">
-              Requirement basis: {evidenceReq.source} ({evidenceReq.confidence} confidence). {evidenceReq.rationale}
+              {t("Requirement basis: {source} ({confidence} confidence). {rationale}", {
+                source: t(evidenceReq.source),
+                confidence: t(evidenceReq.confidence),
+                rationale: t(evidenceReq.rationale),
+              })}
             </p>
           </div>
         ) : null}

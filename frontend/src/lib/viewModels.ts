@@ -13,8 +13,25 @@ import type {
   ScenarioId,
   ScenarioResult,
   SensitivityRow,
+  Totals,
 } from "../api/types";
-import { formatEur, formatMonth } from "./format";
+import { formatEur, formatFte, formatMonth } from "./format";
+import { t } from "../i18n/i18n";
+
+/** Years the payback search can run past the deadline. Mirrors PAYBACK_MAX_MONTHS_AFTER_DEADLINE in backend config.py. */
+export const PAYBACK_LIMIT_YEARS = 20;
+
+/** Months up to and including the deadline. The series after it only exists to find payback. */
+export function deadlineMonths(monthly: MonthlyPoint[]): MonthlyPoint[] {
+  return monthly.filter((m) => !m.after_deadline);
+}
+
+/** Payback in a short label. Says so when it falls after the deadline. */
+export function paybackLabel(tot: Totals): string {
+  if (tot.payback_month === null) return t("Not reached");
+  const when = formatMonth(tot.payback_month);
+  return tot.payback_within_deadline ? when : t("{when} (after deadline)", { when });
+}
 
 // ---------------------------------------------------------------- AI adoption
 export interface AdoptionPoint {
@@ -23,7 +40,7 @@ export interface AdoptionPoint {
 }
 
 export function adoptionRows(monthly: MonthlyPoint[]): AdoptionPoint[] {
-  return monthly.map((m) => ({ month: m.month, share: m.adoption_share }));
+  return deadlineMonths(monthly).map((m) => ({ month: m.month, share: m.adoption_share }));
 }
 
 // ---------------------------------------------------------------- cumulative net by option
@@ -51,7 +68,7 @@ export interface CashRow {
 }
 
 export function cashRows(monthly: MonthlyPoint[]): CashRow[] {
-  return monthly.map((m) => ({
+  return deadlineMonths(monthly).map((m) => ({
     month: m.month,
     benefit: m.benefit_eur,
     cost: m.cost_one_off_eur + m.cost_recurring_eur,
@@ -67,7 +84,7 @@ export interface CoverageRow {
 }
 
 export function coverageRows(monthly: MonthlyPoint[]): CoverageRow[] {
-  return monthly.map((m) => ({ month: m.month, required: m.required_fte, staffed: m.staffed_fte }));
+  return deadlineMonths(monthly).map((m) => ({ month: m.month, required: m.required_fte, staffed: m.staffed_fte }));
 }
 
 // ---------------------------------------------------------------- where the FTE comes from
@@ -135,7 +152,7 @@ export interface GoalProgress {
 }
 
 export function goalProgress(goal: Goal, monthly: MonthlyPoint[], aiCostSaving: number): GoalProgress {
-  const shareAtDeadline = monthly.at(-1)?.adoption_share ?? 0;
+  const shareAtDeadline = deadlineMonths(monthly).at(-1)?.adoption_share ?? 0;
   const costBaseline = goal.baseline.cost_per_review_eur;
   const reductionTarget = goal.target.cost_per_review_reduction_pct;
   const reductionModelled = aiCostSaving * shareAtDeadline;
@@ -164,31 +181,47 @@ export interface Attention {
 export function attentionItems(plan: PlanResponse, scenarioId: ScenarioId): Attention[] {
   const result = plan.scenarios[scenarioId];
   if (!result) return [];
-  const t = result.totals;
+  const totals = result.totals;
   const items: Attention[] = [];
 
-  if (t.payback_month) {
+  if (totals.payback_month && totals.payback_within_deadline) {
     items.push({
       id: "payback",
       tone: "success",
-      title: `Pays back by ${formatMonth(t.payback_month)}`,
-      detail: "Cumulative net turns positive within the deadline.",
+      title: t("Pays back by {month}", { month: formatMonth(totals.payback_month) }),
+      detail: t("Cumulative net turns positive within the deadline."),
+    });
+  } else if (totals.payback_month) {
+    const n = totals.payback_months_after_deadline ?? 0;
+    items.push({
+      id: "payback",
+      tone: "warning",
+      title:
+        n === 1
+          ? t("Pays back 1 month after the deadline, in {month}", { month: formatMonth(totals.payback_month) })
+          : t("Pays back {n} months after the deadline, in {month}", { n, month: formatMonth(totals.payback_month) }),
+      detail: t("Cumulative net is still negative at the deadline. Continuing the Dec 2028 run rate recovers the costs in {month}.", { month: formatMonth(totals.payback_month) }),
     });
   } else {
     items.push({
       id: "payback",
       tone: "warning",
-      title: "No payback before the deadline",
-      detail: `Cumulative net stays negative to the deadline. At the Dec 2028 run rate the option nets about ${formatEur(t.run_rate_net_eur_year)} a year (estimate, not a forecast).`,
+      title: t("No payback within {years} years", { years: PAYBACK_LIMIT_YEARS }),
+      detail: t("At the Dec 2028 run rate the option nets about {amount} a year. That does not recover the costs within {years} years.", {
+        amount: formatEur(totals.run_rate_net_eur_year),
+        years: PAYBACK_LIMIT_YEARS,
+      }),
     });
   }
 
-  if (t.freed_capacity_fte_peak > 0) {
+  if (totals.freed_capacity_fte_peak > 0) {
     items.push({
       id: "freed",
       tone: "info",
-      title: `Aggregate freed capacity peaks at ${t.freed_capacity_fte_peak.toFixed(1)} FTE`,
-      detail: `${t.freed_capacity_flag}. This is an aggregate FTE only. No individual is identified or selected.`,
+      title: t("Aggregate freed capacity peaks at {fte} FTE", { fte: formatFte(totals.freed_capacity_fte_peak, 1) }),
+      detail: t("{flag}. This is an aggregate FTE only. No individual is identified or selected.", {
+        flag: t(totals.freed_capacity_flag),
+      }),
     });
   }
 
@@ -197,15 +230,20 @@ export function attentionItems(plan: PlanResponse, scenarioId: ScenarioId): Atte
     items.push({
       id: "shortfall",
       tone: "warning",
-      title: `${result.shortfalls.length} supply shortfall${result.shortfalls.length === 1 ? "" : "s"}`,
-      detail: `${unmet.toFixed(2)} unmet FTE-months. See the Workforce page for the requirements affected.`,
+      title:
+        result.shortfalls.length === 1
+          ? t("1 supply shortfall")
+          : t("{count} supply shortfalls", { count: result.shortfalls.length }),
+      detail: t("{unmet} unmet FTE-months. See the Workforce page for the requirements affected.", {
+        unmet: formatFte(unmet, 2),
+      }),
     });
   } else {
     items.push({
       id: "shortfall",
       tone: "success",
-      title: "Every requirement is covered",
-      detail: "No unmet FTE-months in this option.",
+      title: t("Every requirement is covered"),
+      detail: t("No unmet FTE-months in this option."),
     });
   }
 

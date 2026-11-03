@@ -5,6 +5,7 @@ import { makePlan, makeShared, scenarioFor } from "../test/fixtures";
 import { renderWithTheme } from "../test/render";
 import { allOf, resetRecorded } from "../test/rechartsStub";
 import { formatEur } from "../lib/format";
+import type { ScenarioId } from "../api/types";
 
 vi.mock("recharts", () => import("../test/rechartsStub"));
 
@@ -133,7 +134,7 @@ describe("Options action explanation", () => {
     expect(within(dialog).getByText("FTE x one-off cost")).toBeTruthy();
 
     const inputs = within(dialog).getAllByRole("definition").map((d) => d.textContent);
-    expect(inputs).toEqual(["4", "3000", "text input", "Jan 2027", "Nothing", "Know your customer (KYC) reviews", "mock_assumption · low ESTIMATE"]);
+    expect(inputs).toEqual(["4", "3000", "text input", "Jan 2027", "Nothing", "Know your customer (KYC) reviews", "Planning assumption · confidence low"]);
     expect(within(dialog).getByText("fte").tagName).toBe("CODE");
   });
 
@@ -195,5 +196,45 @@ describe("Options action explanation", () => {
     const dialog = document.querySelector("dialog") as HTMLDialogElement;
     fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
     expect(dialog.open).toBe(false);
+  });
+});
+
+describe("Options action explanation without optional lists", () => {
+  it("says Nothing and None when an action has no dependencies or gained skills", () => {
+    const plan = makePlan();
+    for (const id of Object.keys(plan.scenarios) as ScenarioId[]) {
+      const result = plan.scenarios[id];
+      if (!result) continue;
+      plan.scenarios[id] = scenarioFor(id, {
+        actions: result.actions.map((a) => ({ ...a, depends_on: undefined, skills_gained: undefined })),
+      });
+    }
+    renderOptions(makeShared({ plan }));
+    fireEvent.click(screen.getByRole("button", { name: "Why: Reskill for R01" }));
+    const dialog = document.querySelector("dialog") as HTMLDialogElement;
+    const inputs = within(dialog).getAllByRole("definition").map((d) => d.textContent);
+    expect(inputs).toContain("Nothing");
+    expect(inputs).toContain("None");
+  });
+});
+
+describe("Options action explanation sources and lists", () => {
+  it("names observed evidence and lists several dependencies and skills", () => {
+    const plan = makePlan();
+    const base = plan.scenarios.hybrid;
+    plan.scenarios.hybrid = scenarioFor("hybrid", {
+      actions: base.actions.map((a) => ({
+        ...a,
+        depends_on: ["M1", "M2"],
+        skills_gained: ["kyc", "aml_monitoring"],
+        explanation: { ...a.explanation, source: "observed" },
+      })),
+    });
+    renderOptions(makeShared({ plan }));
+    fireEvent.click(screen.getByRole("button", { name: "Why: Reskill for R01" }));
+    const dialog = document.querySelector("dialog") as HTMLDialogElement;
+    const inputs = within(dialog).getAllByRole("definition").map((d) => d.textContent);
+    expect(inputs).toContain("M1, M2");
+    expect(inputs.some((v) => v?.startsWith("Observed in 2021 postings"))).toBe(true);
   });
 });

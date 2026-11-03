@@ -1,12 +1,18 @@
 import { render, type RenderOptions } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
 import { ThemeProvider } from "../theme/ThemeProvider";
+import { LanguageProvider } from "../i18n/LanguageProvider";
 
+/** Same provider order as main.tsx: language outside theme. */
 function Wrapper({ children }: { children: ReactNode }) {
-  return <ThemeProvider>{children}</ThemeProvider>;
+  return (
+    <LanguageProvider>
+      <ThemeProvider>{children}</ThemeProvider>
+    </LanguageProvider>
+  );
 }
 
-/** Renders with the theme provider that every chart and the shell read from. rerender keeps the provider. */
+/** Renders inside the language and theme providers that every screen and the shell read from. */
 export function renderWithTheme(ui: ReactElement, options?: RenderOptions) {
   return render(ui, { wrapper: Wrapper, ...options });
 }

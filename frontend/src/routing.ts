@@ -7,7 +7,7 @@ export const PAGES = [
   { id: "workforce", label: "Workforce", short: "Workforce", hint: "Skills and people per milestone" },
   { id: "options", label: "Options", short: "Options", hint: "How to staff each option" },
   { id: "finance", label: "Money", short: "Money", hint: "Costs, benefits and payback" },
-  { id: "assumptions", label: "Assumptions", short: "Assumptions", hint: "Editable mock inputs" },
+  { id: "assumptions", label: "Assumptions", short: "Assumptions", hint: "Editable inputs" },
 ] as const;
 
 export type PageId = (typeof PAGES)[number]["id"];

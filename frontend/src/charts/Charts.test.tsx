@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render } from "@testing-library/react";
+
 import type { ReactNode } from "react";
 import {
   AdoptionChart,
@@ -14,6 +14,7 @@ import { CHROME, NEUTRAL, SERIES } from "../lib/palette";
 import { makePlan } from "../test/fixtures";
 import { adoptionRows, cashRows, coverageRows, cumulativeRows, type MixRow } from "../lib/viewModels";
 import { allOf, lastOf, resetRecorded, tooltipElement } from "../test/rechartsStub";
+import { renderWithTheme } from "../test/render";
 
 vi.mock("recharts", () => import("../test/rechartsStub"));
 
@@ -21,14 +22,14 @@ const plan = makePlan();
 const hybridMonthly = plan.scenarios.hybrid.monthly;
 
 function renderChart(node: ReactNode) {
-  return render(<ThemeProvider>{node}</ThemeProvider>);
+  return renderWithTheme(<ThemeProvider>{node}</ThemeProvider>);
 }
 
 /** Renders a tooltip for a sample payload and returns its text. */
 function tipText(name: string, sample: Record<string, unknown>): string {
   const element = tooltipElement(name, sample);
   if (!element) return "";
-  const { container, unmount } = render(<ThemeProvider>{element}</ThemeProvider>);
+  const { container, unmount } = renderWithTheme(<ThemeProvider>{element}</ThemeProvider>);
   const text = container.textContent ?? "";
   unmount();
   return text;
@@ -109,7 +110,7 @@ describe("CumulativeChart", () => {
   it("renders the legend with coloured text and the series names", () => {
     renderChart(<CumulativeChart rows={rows} series={series} emphasis="hybrid" deadlineMonth="2028-12" />);
     const formatter = lastOf("Legend").formatter as (value: string) => ReactNode;
-    const { container } = render(<>{formatter("Hybrid")}</>);
+    const { container } = renderWithTheme(<>{formatter("Hybrid")}</>);
     const span = container.querySelector("span") as HTMLSpanElement;
     expect(span.textContent).toBe("Hybrid");
     expect(span.style.color).not.toBe("");
@@ -127,8 +128,8 @@ describe("CashChart", () => {
 
     const bars = allOf("Bar");
     expect(bars.map((b) => [b.dataKey, b.name, b.stackId])).toEqual([
-      ["benefit", "Benefit (estimate)", "cash"],
-      ["cost", "Cost (estimate)", "cash"],
+      ["benefit", "Benefit", "cash"],
+      ["cost", "Cost", "cash"],
     ]);
     expect(bars[0].fill).toBe(SERIES.light[0]);
     expect(bars[1].fill).toBe(SERIES.light[1]);

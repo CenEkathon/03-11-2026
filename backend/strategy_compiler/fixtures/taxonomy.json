@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "label": "MOCK / CURATED v2 taxonomy - 9 skills, ESCO-style labels, not an official ESCO export",
+    "label": "Curated v2 taxonomy: 9 skills, ESCO-style labels, not an official ESCO export",
     "version": "0.2.0",
     "esco_uri_policy": "esco_uri is null until verified against the ESCO release. Never invent URIs.",
     "family_rule": "Reskilling counts a person as adjacent when they hold another skill in the same family at level 2 or higher.",
