@@ -180,12 +180,37 @@ describe("Roadmap timeline and plan changes", () => {
     expect((screen.getByLabelText("M1 end month") as HTMLInputElement).value).toBe("2027-06");
   });
 
-  it("copes with a milestone that is in the draft but missing from the new plan, until the draft resets", () => {
+  it("drops a milestone that has left the plan and keeps the rest", () => {
     const { rerender } = renderRoadmap();
     const fewer = makePlan({ milestones: MILESTONES.slice(0, 3).map((m) => ({ ...m })) });
     rerender(<Roadmap shared={makeShared({ plan: fewer })} controls={makeControls()} />);
     expect(screen.queryByLabelText("M4 start month")).toBeNull();
     expect(screen.getByLabelText("M3 end month")).toBeTruthy();
+  });
+
+  it("treats a milestone with no recorded predecessors as the start of the plan", () => {
+    const plan = makePlan({ milestones: MILESTONES.map((m) => ({ ...m, depends_on: undefined })) });
+    renderRoadmap(makeControls(), makeShared({ plan }));
+    expect(screen.getAllByText("Start", { selector: "td" })).toHaveLength(4);
+    expect(screen.getAllByText("AML operations · starts the plan").length).toBeGreaterThan(0);
+  });
+
+  it("keeps the timeline usable when neither the horizon nor the dates are valid months", () => {
+    const plan = makePlan({
+      goal: { ...makePlan().goal, horizon_start: "later", horizon_end: "soon" },
+      milestones: MILESTONES.map((m) => ({ ...m, start: "bad", end: "bad" })),
+    });
+    renderRoadmap(makeControls(), makeShared({ plan }));
+    expect(screen.getAllByText("Dates not set")).toHaveLength(4);
+    expect(screen.queryByText(/^Jan 2027/)).toBeNull();
+  });
+
+  it("keeps both dates of a row when the second one is edited after the first", () => {
+    renderRoadmap();
+    setMonth("M1 end month", "2027-05");
+    setMonth("M1 start month", "2026-12");
+    expect((screen.getByLabelText("M1 start month") as HTMLInputElement).value).toBe("2026-12");
+    expect((screen.getByLabelText("M1 end month") as HTMLInputElement).value).toBe("2027-05");
   });
 
   it("lists the horizon in the card description and the deadline in the timeline", () => {
