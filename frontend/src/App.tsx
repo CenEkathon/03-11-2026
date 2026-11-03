@@ -15,8 +15,11 @@ import { Intake, type IntakeInput } from "./screens/Intake";
 import { analysisStepAt, MOCK_ANALYSIS_DELAY_MS } from "./lib/analysisSteps";
 
 
-/** The app starts on intake. The plan only loads after the mock analysis has been started. */
-type Stage = "intake" | "analyzing" | "ready";
+/**
+ * The app starts on intake. The plan only loads after the mock analysis has been started. The analysing stage
+ * carries the intake input, so the splash can always show what was sent.
+ */
+type Flow = { stage: "intake" } | { stage: "analyzing"; input: IntakeInput } | { stage: "ready" };
 
 function buildRequest(
   caseId: CaseId,
@@ -43,13 +46,13 @@ export default function App() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
-  const [stage, setStage] = useState<Stage>("intake");
-  const [intake, setIntake] = useState<IntakeInput | null>(null);
+  const [flow, setFlow] = useState<Flow>({ stage: "intake" });
+  const stage = flow.stage;
 
   // Mock analysis: after the delay the app becomes navigable. Cleared on unmount (StrictMode safe).
   useEffect(() => {
     if (stage !== "analyzing") return;
-    const timer = window.setTimeout(() => setStage("ready"), MOCK_ANALYSIS_DELAY_MS);
+    const timer = window.setTimeout(() => setFlow({ stage: "ready" }), MOCK_ANALYSIS_DELAY_MS);
     return () => window.clearTimeout(timer);
   }, [stage]);
 
@@ -80,8 +83,7 @@ export default function App() {
   }, [stage]);
 
   const onIntakeSubmit = (input: IntakeInput) => {
-    setIntake(input);
-    setStage("analyzing");
+    setFlow({ stage: "analyzing", input });
     goToPage("overview");
   };
 
@@ -102,7 +104,8 @@ export default function App() {
       setDates(d);
       setOverrides(o);
       setGlobalError(null);
-      setShared((prev) => (prev ? { ...prev, plan, sensitivity } : prev));
+      // Edits are only possible once shared has loaded (controls exist), so prev is never null here.
+      setShared((prev) => ({ ...prev!, plan, sensitivity }));
       return null;
     } catch (e) {
       if (e instanceof ApiError && e.status === 422) return e.validationErrors();
@@ -144,10 +147,10 @@ export default function App() {
   };
 
   let content: ReactNode;
-  if (stage === "intake") {
+  if (flow.stage === "intake") {
     content = <Intake onSubmit={onIntakeSubmit} />;
-  } else if (stage === "analyzing") {
-    content = <AnalyzingScreen input={intake} />;
+  } else if (flow.stage === "analyzing") {
+    content = <AnalyzingScreen input={flow.input} />;
   } else if (loadError) {
     content = (
       <>
@@ -193,7 +196,7 @@ export default function App() {
  * Loading screen for the mock analysis. It shows what was sent, plus rotating status messages so the user can see
  * something is happening. The messages are cosmetic; the wait is a fixed timer.
  */
-function AnalyzingScreen({ input }: { input: IntakeInput | null }) {
+function AnalyzingScreen({ input }: { input: IntakeInput }) {
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
     const started = Date.now();
@@ -219,14 +222,12 @@ function AnalyzingScreen({ input }: { input: IntakeInput | null }) {
           </div>
         </Card>
         <Card title="Received">
-          {input ? (
-            <ul className="analysis-received">
-              <li>Brief: {input.text.length} characters</li>
-              <li>
-                Workers: <strong>{input.fileName}</strong>, {input.workers.rowCount} rows
-              </li>
-            </ul>
-          ) : null}
+          <ul className="analysis-received">
+            <li>Brief: {input.text.length} characters</li>
+            <li>
+              Workers: <strong>{input.fileName}</strong>, {input.workers.rowCount} rows
+            </li>
+          </ul>
           <div className="skeleton-lines" aria-hidden="true">
             <span />
             <span />

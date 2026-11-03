@@ -3,7 +3,7 @@ import { fireEvent, screen, within } from "@testing-library/react";
 import { Finance } from "./Finance";
 import { makePlan, makeShared, scenarioFor, SENSITIVITY } from "../test/fixtures";
 import { kpiValue, renderWithTheme } from "../test/render";
-import { allOf, lastOf, resetRecorded } from "../test/rechartsStub";
+import { allOf, resetRecorded } from "../test/rechartsStub";
 import { formatEur, formatPct } from "../lib/format";
 
 vi.mock("recharts", () => import("../test/rechartsStub"));
