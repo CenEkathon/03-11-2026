@@ -3,6 +3,7 @@ from strategy_compiler.skills.mapper import (
     CONFIDENCE,
     MAPPING_THRESHOLD,
     SkillMatcher,
+    build_matcher,
     load_taxonomy,
     map_text,
     normalise_text,
@@ -117,3 +118,19 @@ def test_normalise_drops_lone_surrogates_and_nbsp():
 def test_normalise_handles_empty_input():
     assert normalise_text(None) == ""
     assert normalise_text("   ") == ""
+
+
+def test_empty_normalised_text_maps_to_nothing(taxonomy):
+    assert build_matcher(taxonomy).map_normalised("", "title") == []
+
+
+def test_multiword_alias_that_runs_past_the_end_of_text_is_skipped(taxonomy):
+    # "know your" is the start of the 3-word alias "know your customer" but the text ends there.
+    assert build_matcher(taxonomy).map_normalised("know your", "description") == []
+
+
+def test_case_change_that_alters_tokenisation_falls_back_to_lowercase_phrase(taxonomy):
+    # "İ" lowercases to "i" plus a combining dot, which splits the token and shifts the word positions.
+    (m,) = build_matcher(taxonomy).map_normalised("İkyc", "description")
+    assert m.skill_id == "kyc"
+    assert m.original_phrase == "kyc"

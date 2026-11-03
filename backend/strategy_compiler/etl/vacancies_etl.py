@@ -193,14 +193,15 @@ def run_etl(
         "year_month VARCHAR, postings BIGINT, postings_in_cell BIGINT, share DOUBLE, "
         "sample_vacancy_ids VARCHAR[])"
     )
-    con.executemany(
-        "INSERT INTO evidence VALUES (?,?,?,?,?,?,?,?)",
-        [
-            (e.skill_id, e.family, e.country, e.year_month, e.postings,
-             e.postings_in_cell, e.share, e.sample_vacancy_ids)
-            for e in evidence_all
-        ],
-    )
+    if evidence_all:  # DuckDB rejects an empty executemany, e.g. when no posting maps to a skill
+        con.executemany(
+            "INSERT INTO evidence VALUES (?,?,?,?,?,?,?,?)",
+            [
+                (e.skill_id, e.family, e.country, e.year_month, e.postings,
+                 e.postings_in_cell, e.share, e.sample_vacancy_ids)
+                for e in evidence_all
+            ],
+        )
     con.execute(
         f"COPY evidence TO '{_sql_path(out_dir / 'vacancy_skill_evidence.parquet')}' (FORMAT PARQUET)"
     )
