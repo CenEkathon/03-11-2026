@@ -62,3 +62,32 @@ describe("scenario helpers", () => {
     expect(SCENARIO_SLOT.hybrid).toBe(2);
   });
 });
+
+describe("formatFteCompact", () => {
+  it("shows whole FTE without decimals and fractional FTE with one", async () => {
+    const { formatFteCompact } = await import("./format");
+    expect(formatFteCompact(2)).toBe("2");
+    expect(formatFteCompact(1.5)).toBe("1.5");
+  });
+});
+
+describe("unit and axis formatting branches", () => {
+  it("leaves a non-month axis label as it is", async () => {
+    const { formatAxisMonth } = await import("./format");
+    expect(formatAxisMonth("2027")).toBe("2027");
+  });
+
+  it("formats money with and without a per-unit suffix", async () => {
+    const { formatByUnit, formatEur } = await import("./format");
+    expect(formatByUnit(1000, "EUR")).toBe(formatEur(1000));
+    expect(formatByUnit(40, "EUR/review")).toBe(`${formatEur(40)} per review`);
+  });
+
+  it("formats multipliers, whole and fractional units, and values with no unit", async () => {
+    const { formatByUnit } = await import("./format");
+    expect(formatByUnit(1.5, "multiplier")).toBe("1.50×");
+    expect(formatByUnit(2, "FTE")).toBe("2 FTE");
+    expect(formatByUnit(2.5, "FTE")).toBe("2.50 FTE");
+    expect(formatByUnit(3, undefined)).toBe("3");
+  });
+});

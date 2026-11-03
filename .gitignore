@@ -12,3 +12,7 @@ backend/**/__pycache__/
 backend/.pytest_cache/
 frontend/node_modules/
 frontend/dist/
+
+# Coverage outputs
+backend/.coverage
+frontend/coverage/

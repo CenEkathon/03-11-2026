@@ -1,10 +1,13 @@
 import json
+import runpy
+import sys
 from datetime import date
 from pathlib import Path
 
 import duckdb
 import pytest
 
+from strategy_compiler.etl import vacancies_etl as etl
 from strategy_compiler.etl.vacancies_etl import (
     is_intermediary,
     normalise_company,
@@ -149,3 +152,62 @@ def test_real_parquet_etl_end_to_end(tmp_path, taxonomy):
     assert doc["rows"], "expected at least one evidence cell"
     text = (tmp_path / "committed" / "vacancy_evidence.json").read_text(encoding="utf-8")
     assert "\"company\"" not in text
+
+
+def _evidence_rows(committed: Path):
+    return json.loads((committed / "vacancy_evidence.json").read_text(encoding="utf-8"))["rows"]
+
+
+def test_sample_vacancy_ids_are_capped_per_cell(tmp_path, taxonomy):
+    rows = [
+        (str(100 + i), f"Data Engineer {i}", f"Azure and SQL experience required, Python {i}.", f"Firm {i}",
+         date(2021, 3, 4), "GB", "London")
+        for i in range(5)
+    ]
+    src = tmp_path / "many.parquet"
+    _write_parquet(src, rows)
+    committed = tmp_path / "committed"
+    run_etl(src, tmp_path / "derived", committed, taxonomy=taxonomy, min_cell_postings=1)
+    (cell,) = [r for r in _evidence_rows(committed) if r["skill_id"] == "data_engineering"]
+    assert cell["postings"] == 5
+    assert len(cell["sample_vacancy_ids"]) == 3  # SAMPLE_IDS_PER_CELL
+
+
+def test_cells_below_the_committed_minimum_stay_out_of_the_fixture(tmp_path, taxonomy):
+    src = tmp_path / "one.parquet"
+    _write_parquet(src, [("1", "Data Engineer", "Azure and SQL experience required, Python.", "Firm", date(2021, 3, 4), "GB", "London")])
+    committed = tmp_path / "committed"
+    run_etl(src, tmp_path / "derived", committed, taxonomy=taxonomy, min_cell_postings=2)
+    assert _evidence_rows(committed) == []
+
+
+def test_postings_with_no_skill_text_produce_no_mappings(tmp_path, taxonomy):
+    src = tmp_path / "plain.parquet"
+    _write_parquet(src, [("1", "Office manager", "Coordinate the reception desk.", "Firm", date(2021, 3, 4), "GB", "London")])
+    committed = tmp_path / "committed"
+    report = run_etl(src, tmp_path / "derived", committed, taxonomy=taxonomy, min_cell_postings=1)
+    assert report["postings_with_mapped_skill"] == 0
+    assert _evidence_rows(committed) == []
+    assert (tmp_path / "derived" / "postings_skill_mappings.parquet").exists()
+
+
+def test_cli_main_prints_summary_and_writes_outputs(tmp_path, capsys):
+    src = tmp_path / "toy.parquet"
+    _write_parquet(src, TOY_ROWS)
+    committed = tmp_path / "committed"
+    etl.main(["--input", str(src), "--out-dir", str(tmp_path / "derived"), "--committed-dir", str(committed)])
+    out = capsys.readouterr().out
+    assert "raw rows: 8" in out
+    assert "top 15 skills by deduped postings:" in out
+    assert (committed / "vacancy_evidence.json").exists()
+
+
+def test_module_runs_as_a_script(tmp_path, monkeypatch):
+    src = tmp_path / "toy.parquet"
+    _write_parquet(src, TOY_ROWS)
+    argv = ["vacancies_etl", "--input", str(src), "--out-dir", str(tmp_path / "derived"),
+            "--committed-dir", str(tmp_path / "committed")]
+    monkeypatch.setattr(sys, "argv", argv)
+    monkeypatch.delitem(sys.modules, "strategy_compiler.etl.vacancies_etl")  # restored after the test
+    runpy.run_module("strategy_compiler.etl.vacancies_etl", run_name="__main__")
+    assert (tmp_path / "committed" / "vacancy_evidence.json").exists()
