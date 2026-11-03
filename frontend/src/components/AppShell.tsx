@@ -1,7 +1,12 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { useTheme, type ThemePreference } from "../theme/ThemeProvider";
 import { PAGES, type PageId } from "../routing";
 import { Dialog, Badge, Segmented } from "./ui";
+import { SubwayDash } from "./SubwayDash";
+
+/** Five clicks on the logo within two seconds open the hidden game. */
+const SECRET_CLICKS = 5;
+const SECRET_WINDOW_MS = 2000;
 import { BADGE_MEANING, type BadgeKind } from "../lib/labels";
 import type { CaseId } from "../api/types";
 
@@ -35,6 +40,17 @@ interface ShellProps {
 export function AppShell({ page, onNavigate, caseId, onCaseChange, busy, edited, navigable, children }: ShellProps) {
   const { preference, setPreference } = useTheme();
   const [legendOpen, setLegendOpen] = useState(false);
+  const [gameOpen, setGameOpen] = useState(false);
+  const logoClicks = useRef<number[]>([]);
+
+  const onLogoClick = () => {
+    const now = Date.now();
+    logoClicks.current = [...logoClicks.current.filter((t) => now - t < SECRET_WINDOW_MS), now];
+    if (logoClicks.current.length >= SECRET_CLICKS) {
+      logoClicks.current = [];
+      setGameOpen(true);
+    }
+  };
 
   return (
     <div className="app">
@@ -44,7 +60,7 @@ export function AppShell({ page, onNavigate, caseId, onCaseChange, busy, edited,
 
       <aside className="sidebar">
         <div className="brand">
-          <span className="brand-mark" aria-hidden="true">
+          <span className="brand-mark" aria-hidden="true" onClick={onLogoClick}>
             SC
           </span>
           <div>
@@ -143,6 +159,10 @@ export function AppShell({ page, onNavigate, caseId, onCaseChange, busy, edited,
           Nothing in this demo describes a real company, a real CEO decision or a real person. The vacancy evidence is shown as an
           aggregate and is never attributed to an employer.
         </p>
+      </Dialog>
+
+      <Dialog open={gameOpen} onClose={() => setGameOpen(false)} title="Subway Dash" wide>
+        <SubwayDash />
       </Dialog>
     </div>
   );
