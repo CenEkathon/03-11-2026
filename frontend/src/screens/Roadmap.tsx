@@ -140,7 +140,6 @@ export function Roadmap({ shared, controls }: { shared: Shared; controls: Contro
               {drafts.map((d) => {
                 const m = milestoneById.get(d.id);
                 const errs = perRow[d.id] ?? [];
-                const owner = m ? teamName[m.owner_team] : undefined;
                 return (
                   <tr key={d.id} className={errs.length ? "row-invalid" : undefined}>
                     <td>
@@ -149,7 +148,7 @@ export function Roadmap({ shared, controls }: { shared: Shared; controls: Contro
                       </div>
                       <div className="muted small">{m ? t(m.description) : null}</div>
                     </td>
-                    <td>{owner ? t(owner) : t("n/a")}</td>
+                    <td>{teamName[m?.owner_team ?? ""] ? t(teamName[m?.owner_team ?? ""]) : t("n/a")}</td>
                     <td>{d.depends_on.length ? d.depends_on.join(", ") : t("Start")}</td>
                     <td>
                       <input

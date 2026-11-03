@@ -73,7 +73,7 @@ function ChartTooltip({
 
 function formatTipLabel(label: unknown): string {
   const s = String(label ?? "");
-  return /^\d{4}-\d{2}$/.test(s) ? formatAxisMonth(s).replace(" '", " 20") : s;
+  return /^\d{4}-\d{2}$/.test(s) ? formatAxisMonth(s).replace("'", " 20") : s;
 }
 
 /** Legend labels take the text colour, never the series colour. The swatch beside them carries identity. */

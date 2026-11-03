@@ -226,12 +226,11 @@ export function Dialog({
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
-  // The ref is attached on mount (the dialog is always rendered), so it is never null here.
   useEffect(() => {
-    const dialog = ref.current!;
-    if (open === dialog.open) return;
-    if (open) dialog.showModal();
-    else dialog.close();
+    const dialog = ref.current;
+    if (!dialog) return;
+    if (open && !dialog.open) dialog.showModal();
+    if (!open && dialog.open) dialog.close();
   }, [open]);
 
   return (

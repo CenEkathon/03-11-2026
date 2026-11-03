@@ -13,7 +13,7 @@ export function Workforce({ shared }: { shared: Shared }) {
   useLang();
   const { plan, skillLabels, caseInfo } = shared;
   const [scenario, setScenario] = useState<ScenarioId>(RECOMMENDED);
-  const [milestoneId, setMilestoneId] = useState<string>(plan.milestones[0].id); // a plan always has milestones
+  const [milestoneId, setMilestoneId] = useState<string>(plan.milestones[0]?.id ?? "M1");
   const [evidenceFor, setEvidenceFor] = useState<string | null>(null);
 
   const teamName = useMemo(() => Object.fromEntries(caseInfo.company.teams.map((tm) => [tm.id, tm.name])), [caseInfo]);
@@ -24,7 +24,6 @@ export function Workforce({ shared }: { shared: Shared }) {
   const shortfalls = result.shortfalls.filter((s) => s.milestone_id === milestone.id);
   const evidenceReq = requirements.find((r) => r.id === evidenceFor) ?? null;
   const evidenceFit = evidenceReq ? fitById.get(evidenceReq.id) : undefined;
-  const evidenceIds = evidenceFit?.evidence_employee_ids ?? [];
   const scenarioLabel = t(SCENARIO_SHORT_LABEL[scenario]);
 
   const columns: Column<Requirement>[] = [
@@ -207,9 +206,9 @@ export function Workforce({ shared }: { shared: Shared }) {
             <div>
               <h3>{t("Sample employee IDs (up to 5)")}</h3>
               <p className="muted small">IDs are evidence for the count only. They are not a ranking and do not select anyone.</p>
-              {evidenceIds.length ? (
+              {(evidenceFit.evidence_employee_ids ?? []).length ? (
                 <ul className="id-list">
-                  {evidenceIds.map((id) => (
+                  {(evidenceFit.evidence_employee_ids ?? []).map((id) => (
                     <li key={id}>
                       <code>{id}</code>
                     </li>

@@ -22,11 +22,10 @@ export function Assumptions({ shared, controls }: { shared: Shared; controls: Co
   const [busy, setBusy] = useState(false);
   const activeOverrides = Object.keys(controls.overrides).length;
 
-  // Number inputs only ever hold numeric text (or ""), so an empty field is the only one to drop.
   const numericDrafts = (): Record<string, number> =>
     Object.fromEntries(
       Object.entries(drafts)
-        .filter(([, v]) => v.trim() !== "")
+        .filter(([, v]) => v.trim() !== "" && !Number.isNaN(Number(v)))
         .map(([k, v]) => [k, Number(v)]),
     );
 

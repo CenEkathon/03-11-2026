@@ -18,8 +18,7 @@ import { useLang } from "./i18n/LanguageProvider";
 
 
 /** The app starts on intake. The plan only loads after the mock analysis has been started. */
-/** Where the user is. The analysing stage carries its input, so the analysing screen never lacks it. */
-type Flow = { stage: "intake" } | { stage: "analyzing"; input: IntakeInput } | { stage: "ready" };
+type Stage = "intake" | "analyzing" | "ready";
 
 function buildRequest(
   caseId: CaseId,
@@ -48,18 +47,19 @@ export default function App() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
-  const [flow, setFlow] = useState<Flow>({ stage: "intake" });
+  const [stage, setStage] = useState<Stage>("intake");
+  const [intake, setIntake] = useState<IntakeInput | null>(null);
 
   // Mock analysis: after the delay the app becomes navigable. Cleared on unmount (StrictMode safe).
   useEffect(() => {
-    if (flow.stage !== "analyzing") return;
-    const timer = window.setTimeout(() => setFlow({ stage: "ready" }), MOCK_ANALYSIS_DELAY_MS);
+    if (stage !== "analyzing") return;
+    const timer = window.setTimeout(() => setStage("ready"), MOCK_ANALYSIS_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [flow.stage]);
+  }, [stage]);
 
   // Bootstrap: reference data and the default plan. Starts once the user has sent the intake. Cancelled on unmount.
   useEffect(() => {
-    if (flow.stage === "intake") return;
+    if (stage === "intake") return;
     let cancelled = false;
     (async () => {
       try {
@@ -81,10 +81,11 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [flow.stage]);
+  }, [stage]);
 
   const onIntakeSubmit = (input: IntakeInput) => {
-    setFlow({ stage: "analyzing", input });
+    setIntake(input);
+    setStage("analyzing");
     goToPage("overview");
   };
 
@@ -105,7 +106,7 @@ export default function App() {
       setDates(d);
       setOverrides(o);
       setGlobalError(null);
-      setShared((prev) => ({ ...prev!, plan, sensitivity })); // controls exist only once shared has loaded
+      setShared((prev) => (prev ? { ...prev, plan, sensitivity } : prev));
       return null;
     } catch (e) {
       if (e instanceof ApiError && e.status === 422) return e.validationErrors();
@@ -143,14 +144,14 @@ export default function App() {
     },
     busy,
     edited,
-    navigable: flow.stage === "ready",
+    navigable: stage === "ready",
   };
 
   let content: ReactNode;
-  if (flow.stage === "intake") {
+  if (stage === "intake") {
     content = <Intake onSubmit={onIntakeSubmit} />;
-  } else if (flow.stage === "analyzing") {
-    content = <AnalyzingScreen input={flow.input} />;
+  } else if (stage === "analyzing") {
+    content = <AnalyzingScreen input={intake} />;
   } else if (loadError) {
     content = (
       <>
@@ -196,7 +197,7 @@ export default function App() {
  * Loading screen for the mock analysis. It shows what was sent, plus rotating status messages so the user can see
  * something is happening. The messages are cosmetic; the wait is a fixed timer.
  */
-function AnalyzingScreen({ input }: { input: IntakeInput }) {
+function AnalyzingScreen({ input }: { input: IntakeInput | null }) {
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
     const started = Date.now();
@@ -222,12 +223,14 @@ function AnalyzingScreen({ input }: { input: IntakeInput }) {
           </div>
         </Card>
         <Card title={t("Received")}>
-          <ul className="analysis-received">
-            <li>{t("Brief: {count} characters", { count: input.text.length })}</li>
-            <li>
-              {t("Workers:")} <strong>{input.fileName}</strong>, {t("{count} rows", { count: input.workers.rowCount })}
-            </li>
-          </ul>
+          {input ? (
+            <ul className="analysis-received">
+              <li>{t("Brief: {count} characters", { count: input.text.length })}</li>
+              <li>
+                {t("Workers:")} <strong>{input.fileName}</strong>, {t("{count} rows", { count: input.workers.rowCount })}
+              </li>
+            </ul>
+          ) : null}
           <div className="skeleton-lines" aria-hidden="true">
             <span />
             <span />

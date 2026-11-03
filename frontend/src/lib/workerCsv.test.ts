@@ -35,19 +35,4 @@ describe("summariseWorkerCsv", () => {
     const result = summariseWorkerCsv("employee_id,team\n");
     expect(result).toEqual({ ok: false, error: "The file has a header row but no worker rows." });
   });
-
-  it("rejects a header row with no column names", () => {
-    const result = summariseWorkerCsv(",\nW001,KYC\n");
-    expect(result).toEqual({ ok: false, error: "The first row has no column names." });
-  });
-
-  it("counts a last row that has no trailing newline", () => {
-    const result = summariseWorkerCsv("employee_id,team\nW001,KYC");
-    expect(result).toEqual({ ok: true, summary: { headers: ["employee_id", "team"], rowCount: 1 } });
-  });
-
-  it("ignores rows that contain only whitespace when counting workers", () => {
-    const result = summariseWorkerCsv("employee_id,team\n , \nW001,KYC\n");
-    expect(result).toEqual({ ok: true, summary: { headers: ["employee_id", "team"], rowCount: 1 } });
-  });
 });

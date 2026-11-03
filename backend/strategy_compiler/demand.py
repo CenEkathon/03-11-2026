@@ -12,6 +12,7 @@ from typing import Any
 
 from .config import ADJACENT_MIN_PROFICIENCY, RESKILL_MAX_GAP
 from .contracts import Employee, Milestone, Requirement, SkillFit, VacancyEvidence
+from .timeline import month_range
 
 
 def expand_requirements(specs: Iterable[dict[str, Any]], milestones: Sequence[Milestone]) -> list[Requirement]:
@@ -24,6 +25,14 @@ def expand_requirements(specs: Iterable[dict[str, Any]], milestones: Sequence[Mi
             raise ValueError(f"requirement {spec['id']} points to unknown milestone {spec['milestone_id']}")
         out.append(Requirement(**spec, start=m.start, end=m.end))
     return out
+
+
+def required_fte_by_month(requirements: Iterable[Requirement]) -> dict[str, float]:
+    totals: dict[str, float] = {}
+    for r in requirements:
+        for month in month_range(r.start, r.end):
+            totals[month] = totals.get(month, 0.0) + r.fte
+    return totals
 
 
 def vacancy_share(skill_id: str, evidence: Sequence[VacancyEvidence]) -> float | None:

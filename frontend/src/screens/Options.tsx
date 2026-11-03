@@ -15,9 +15,6 @@ export function Options({ shared }: { shared: Shared }) {
   const [scenario, setScenario] = useState<ScenarioId>(RECOMMENDED);
   const [milestoneFilter, setMilestoneFilter] = useState<string>("all");
   const [openAction, setOpenAction] = useState<ActionLine | null>(null);
-  // The server omits empty lists, so read each one once and treat a missing list as empty.
-  const dependsOn = openAction?.depends_on ?? [];
-  const skillsGained = openAction?.skills_gained ?? [];
 
   const result = plan.scenarios[scenario];
   const requirementById = useMemo(() => new Map(plan.requirements.map((r) => [r.id, r])), [plan.requirements]);
@@ -221,11 +218,11 @@ export function Options({ shared }: { shared: Shared }) {
               </div>
               <div>
                 <dt>{t("Depends on")}</dt>
-                <dd>{dependsOn.length ? dependsOn.join(", ") : t("Nothing")}</dd>
+                <dd>{(openAction.depends_on ?? []).length ? (openAction.depends_on ?? []).join(", ") : t("Nothing")}</dd>
               </div>
               <div>
                 <dt>{t("Skills gained")}</dt>
-                <dd>{skillsGained.length ? skillsGained.map(skill).join(", ") : t("None")}</dd>
+                <dd>{(openAction.skills_gained ?? []).length ? (openAction.skills_gained ?? []).map(skill).join(", ") : t("None")}</dd>
               </div>
               <div>
                 <dt>{t("Source and confidence")}</dt>
