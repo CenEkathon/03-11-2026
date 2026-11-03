@@ -31,12 +31,13 @@ Show what happens after a CEO gives a future business goal. The app turns it int
 7. **CEO brief.** See the recommendation (hybrid), the aggregate workforce impact, budget by phase, value, risks, assumptions and decisions requiring approval. Narrative is drafted (template or live Claude) and labelled as such. Numbers come from the engine.
 
 ## Screens (six, all labelled MOCK, SYNTHETIC or EXTERNAL)
-1. Goal and roadmap (editable timeline).
-2. Demand (requirements by milestone, with evidence drawer).
-3. Supply and gaps.
-4. Actions.
-5. Finance and scenarios.
-6. CEO brief.
+Simplified for readability. The CEO brief now sits at the bottom of Overview.
+1. Overview: goal progress, KPIs, AI-share chart, net value by option, attention points, brief.
+2. Roadmap: Gantt timeline that previews edits, and the timing editor.
+3. Workforce: per milestone, required vs staffed FTE chart, requirements, eligible counts and evidence IDs.
+4. Options: three option cards, FTE mix by milestone (stacked columns), action list with "Why?".
+5. Money: cumulative net by option, monthly cost and benefit, low/base/high range, comparison table.
+6. Assumptions: editable mock inputs with low, base and high values.
 
 ## Contracts (API)
 Defined in `backend/strategy_compiler/contracts.py`. The OpenAPI schema is served by FastAPI at `/openapi.json`.

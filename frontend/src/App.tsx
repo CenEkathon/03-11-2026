@@ -1,14 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { api, API_BASE, ApiError } from "./api/client";
 import type { CaseId, MilestoneDates, PlanRequest } from "./api/types";
 import type { Controls, Shared } from "./appTypes";
-import { Badge, NavBar, type ScreenId } from "./components/ui";
-import { Actions } from "./screens/Actions";
-import { Brief } from "./screens/Brief";
-import { Demand } from "./screens/Demand";
+import { AppShell } from "./components/AppShell";
+import { Callout, Card, PageHeader } from "./components/ui";
+import { useHashPage } from "./routing";
+import { Assumptions } from "./screens/Assumptions";
 import { Finance } from "./screens/Finance";
-import { GoalRoadmap } from "./screens/GoalRoadmap";
-import { Supply } from "./screens/Supply";
+import { Options } from "./screens/Options";
+import { Overview } from "./screens/Overview";
+import { Roadmap } from "./screens/Roadmap";
+import { Workforce } from "./screens/Workforce";
 
 function buildRequest(
   caseId: CaseId,
@@ -27,24 +29,21 @@ function messageOf(e: unknown): string {
 }
 
 export default function App() {
-  const [screen, setScreen] = useState<ScreenId>("goal");
+  const [page, goToPage] = useHashPage();
   const [caseId, setCaseId] = useState<CaseId>("base");
   const [dates, setDates] = useState<Record<string, MilestoneDates>>({});
   const [overrides, setOverrides] = useState<Record<string, number>>({});
   const [shared, setShared] = useState<Shared | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
 
-  // Bootstrap: reference data first, then the default plan. Cancelled on unmount (StrictMode safe).
+  // Bootstrap: reference data and the default plan. Cancelled on unmount (StrictMode safe).
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [caseInfo, skills, assumptionsRes] = await Promise.all([
-          api.caseInfo(),
-          api.skills(),
-          api.assumptions(),
-        ]);
+        const [caseInfo, skills, assumptionsRes] = await Promise.all([api.caseInfo(), api.skills(), api.assumptions()]);
         const req = buildRequest("base", {}, {});
         const [plan, sensitivity] = await Promise.all([api.computePlan(req), api.sensitivity(req)]);
         if (cancelled) return;
@@ -65,8 +64,8 @@ export default function App() {
   }, []);
 
   /**
-   * Recompute with the given inputs. On success the new plan replaces the old one. On a 422 the
-   * current plan stays and the validation messages are returned to the caller.
+   * Recompute with the given inputs. On success the new plan replaces the old one. On a 422 the current
+   * plan stays and the validation messages go back to the caller.
    */
   const applyRequest = async (
     c: CaseId,
@@ -74,6 +73,7 @@ export default function App() {
     o: Record<string, number>,
   ): Promise<string[] | null> => {
     const req = buildRequest(c, d, o);
+    setBusy(true);
     try {
       const [plan, sensitivity] = await Promise.all([api.computePlan(req), api.sensitivity(req)]);
       setCaseId(c);
@@ -87,95 +87,92 @@ export default function App() {
       const message = messageOf(e);
       setGlobalError(message);
       return [message];
+    } finally {
+      setBusy(false);
     }
   };
 
-  if (loadError) {
-    return (
-      <div className="page">
-        <div className="alert" role="alert">
-          <strong>Could not reach the API at {API_BASE}.</strong> {loadError}
-          <p className="small">
-            Start the backend from <code>backend/</code>: <code>uv run uvicorn strategy_compiler.api:app --port 8000</code>
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const edited = Object.keys(dates).length > 0 || Object.keys(overrides).length > 0;
 
-  if (!shared) {
-    return (
-      <div className="page">
-        <p className="muted">Loading the mock plan from the API...</p>
-      </div>
-    );
-  }
+  const controls: Controls | null = shared
+    ? {
+        caseId,
+        setCase: (c) => {
+          void applyRequest(c, dates, overrides);
+        },
+        dates,
+        overrides,
+        isEdited: edited,
+        busy,
+        applyRoadmap: (newDates) => applyRequest(caseId, newDates, overrides),
+        applyAssumptions: (newOverrides) => applyRequest(caseId, dates, newOverrides),
+      }
+    : null;
 
-  const controls: Controls = {
+  const shellProps = {
+    page,
+    onNavigate: goToPage,
     caseId,
-    setCase: (c) => {
-      void applyRequest(c, dates, overrides);
+    onCaseChange: (c: CaseId) => {
+      if (controls) controls.setCase(c);
     },
-    dates,
-    overrides,
-    isEdited: Object.keys(dates).length > 0 || Object.keys(overrides).length > 0,
-    applyRoadmap: (newDates) => applyRequest(caseId, newDates, overrides),
-    applyAssumptions: (newOverrides) => applyRequest(caseId, dates, newOverrides),
+    busy,
+    edited,
   };
 
-  const labels = shared.plan.labels;
-
-  return (
-    <div className="page">
-      <header className="app-head">
-        <div>
-          <h1>Strategy Compiler</h1>
-          <p className="small muted">
-            Decision-support demo. Northwind Bank is fictional. The goal, roadmap, workforce and figures are all mock or
-            synthetic, and costs are estimates.
+  let content: ReactNode;
+  if (loadError) {
+    content = (
+      <>
+        <PageHeader title="The plan could not load" />
+        <Callout tone="critical" title={`Could not reach the API at ${API_BASE}`}>
+          <p>{loadError}</p>
+          <p>
+            Start the backend from <code>backend/</code> with <code>uv run uvicorn strategy_compiler.api:app --port 8000</code>, then
+            try again.
           </p>
-        </div>
-        <div className="head-controls">
-          <label>
-            Case{" "}
-            <select value={caseId} onChange={(e) => controls.setCase(e.target.value as CaseId)} aria-label="Assumption case">
-              <option value="low">Low (conservative)</option>
-              <option value="base">Base</option>
-              <option value="high">High (optimistic)</option>
-            </select>
-          </label>
-          <div className="badge-stack">
-            <Badge labelKey="goal" caption={labels.goal} />
-            <Badge labelKey="roadmap" caption={labels.roadmap} />
-            <Badge labelKey="workforce" caption={labels.workforce} />
-            <Badge labelKey="assumptions" caption={labels.assumptions} />
-            <Badge labelKey="vacancy_evidence" caption={labels.vacancy_evidence} />
-            <Badge labelKey="estimates" caption={labels.estimates} />
+          <button type="button" className="btn" onClick={() => window.location.reload()}>
+            Try again
+          </button>
+        </Callout>
+      </>
+    );
+  } else if (!shared || !controls) {
+    content = <LoadingSkeleton />;
+  } else {
+    content = (
+      <>
+        {globalError ? (
+          <div className="stack-sm">
+            <Callout tone="critical" title="The last recalculation failed. The results on screen are from before it.">
+              {globalError}
+            </Callout>
           </div>
+        ) : null}
+        {page === "overview" ? <Overview shared={shared} controls={controls} /> : null}
+        {page === "roadmap" ? <Roadmap shared={shared} controls={controls} /> : null}
+        {page === "workforce" ? <Workforce shared={shared} /> : null}
+        {page === "options" ? <Options shared={shared} /> : null}
+        {page === "finance" ? <Finance shared={shared} /> : null}
+        {page === "assumptions" ? <Assumptions shared={shared} controls={controls} /> : null}
+      </>
+    );
+  }
+
+  return <AppShell {...shellProps}>{content}</AppShell>;
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="skeleton-page" role="status" aria-live="polite">
+      <span className="sr-only">Loading the mock plan from the API…</span>
+      <Card title="Loading">
+        <div className="skeleton-lines" aria-hidden="true">
+          <span />
+          <span />
+          <span />
         </div>
-      </header>
-
-      {controls.isEdited ? (
-        <p className="notice" role="status">
-          Showing edited inputs: roadmap or assumption overrides are active for this session.
-        </p>
-      ) : null}
-      {globalError ? (
-        <div className="alert" role="alert">
-          {globalError}
-        </div>
-      ) : null}
-
-      <NavBar active={screen} onSelect={setScreen} />
-
-      <main>
-        {screen === "goal" ? <GoalRoadmap shared={shared} controls={controls} /> : null}
-        {screen === "demand" ? <Demand shared={shared} /> : null}
-        {screen === "supply" ? <Supply shared={shared} /> : null}
-        {screen === "actions" ? <Actions shared={shared} /> : null}
-        {screen === "finance" ? <Finance shared={shared} controls={controls} /> : null}
-        {screen === "brief" ? <Brief shared={shared} controls={controls} /> : null}
-      </main>
+      </Card>
     </div>
   );
 }

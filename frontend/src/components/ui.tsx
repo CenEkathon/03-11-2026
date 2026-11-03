@@ -1,46 +1,134 @@
-import { useEffect, type ReactNode } from "react";
-import { badgeKind, type BadgeKind } from "../lib/labels";
+import { useEffect, useId, useRef, type ReactNode } from "react";
+import { badgeKind, BADGE_MEANING, type BadgeKind } from "../lib/labels";
 
-/** Visible data-status badge. The caption is the full label text from response.labels. */
-export function Badge({ labelKey, caption }: { labelKey: string; caption?: string }) {
-  const kind: BadgeKind = badgeKind(labelKey);
+// ---------------------------------------------------------------- status
+
+/** Data-status badge: MOCK, SYNTHETIC, EXTERNAL or ESTIMATE. The meaning is in the title and the legend dialog. */
+export function Badge({ kind }: { kind: BadgeKind }) {
   return (
-    <span className={`badge badge-${kind.toLowerCase()}`} title={caption} data-kind={kind}>
+    <span className={`badge badge-${kind.toLowerCase()}`} title={BADGE_MEANING[kind]}>
       {kind}
     </span>
   );
 }
 
-export function BadgeRow({ labelKey, labels }: { labelKey: string; labels: Record<string, string> }) {
+/** Badge for a response.labels key, e.g. "workforce" -> SYNTHETIC. */
+export function LabelBadge({ labelKey }: { labelKey: string }) {
+  return <Badge kind={badgeKind(labelKey)} />;
+}
+
+// ---------------------------------------------------------------- layout
+
+export function PageHeader({ title, lead, actions }: { title: string; lead?: ReactNode; actions?: ReactNode }) {
   return (
-    <div className="badge-row">
-      <Badge labelKey={labelKey} caption={labels[labelKey]} />
-      <span className="caption">{labels[labelKey] ?? ""}</span>
-    </div>
+    <header className="page-head">
+      <div className="page-head-text">
+        <h1>{title}</h1>
+        {lead ? <p className="lead">{lead}</p> : null}
+      </div>
+      {actions ? <div className="page-head-actions">{actions}</div> : null}
+    </header>
   );
 }
 
-export function Card({ title, children, actions }: { title: string; children: ReactNode; actions?: ReactNode }) {
+export function Card({
+  title,
+  description,
+  actions,
+  children,
+  className,
+  id,
+}: {
+  title: string;
+  description?: ReactNode;
+  actions?: ReactNode;
+  children: ReactNode;
+  className?: string;
+  id?: string;
+}) {
+  const headingId = useId();
   return (
-    <section className="card">
+    <section className={`card${className ? ` ${className}` : ""}`} aria-labelledby={headingId} id={id}>
       <header className="card-head">
-        <h2>{title}</h2>
-        {actions}
+        <div>
+          <h2 id={headingId}>{title}</h2>
+          {description ? <p className="card-desc">{description}</p> : null}
+        </div>
+        {actions ? <div className="card-actions">{actions}</div> : null}
       </header>
       {children}
     </section>
   );
 }
 
-export function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
+export function Kpi({ label, value, sub, tone }: { label: string; value: string; sub?: ReactNode; tone?: "good" | "bad" }) {
   return (
-    <div className="stat">
-      <div className="stat-label">{label}</div>
-      <div className="stat-value">{value}</div>
-      {sub ? <div className="stat-sub">{sub}</div> : null}
+    <div className="kpi">
+      <div className="kpi-label">{label}</div>
+      <div className={`kpi-value${tone ? ` kpi-${tone}` : ""}`}>{value}</div>
+      {sub ? <div className="kpi-sub">{sub}</div> : null}
     </div>
   );
 }
+
+export function KpiRow({ children }: { children: ReactNode }) {
+  return <div className="kpi-row">{children}</div>;
+}
+
+export function Callout({ tone = "info", title, children }: { tone?: "info" | "warning" | "critical" | "success"; title?: string; children?: ReactNode }) {
+  const role = tone === "critical" ? "alert" : "status";
+  return (
+    <div className={`callout callout-${tone}`} role={role}>
+      <span className="callout-mark" aria-hidden="true">
+        {tone === "success" ? "✓" : tone === "critical" ? "!" : tone === "warning" ? "!" : "i"}
+      </span>
+      <div>
+        {title ? <strong className="callout-title">{title}</strong> : null}
+        {children ? <div className="callout-body">{children}</div> : null}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- controls
+
+export interface SegmentOption<T extends string> {
+  value: T;
+  label: string;
+}
+
+/** Single-choice toggle. Buttons with aria-pressed; the group has a visible or accessible name. */
+export function Segmented<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  size = "md",
+}: {
+  label: string;
+  options: SegmentOption<T>[];
+  value: T;
+  onChange: (v: T) => void;
+  size?: "sm" | "md";
+}) {
+  return (
+    <div className={`segmented segmented-${size}`} role="group" aria-label={label}>
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          className="segment"
+          aria-pressed={o.value === value}
+          onClick={() => onChange(o.value)}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- tables
 
 export interface Column<T> {
   key: string;
@@ -49,16 +137,23 @@ export interface Column<T> {
   numeric?: boolean;
 }
 
-export function DataTable<T>({ columns, rows, caption, rowKey }: {
+export function DataTable<T>({
+  columns,
+  rows,
+  caption,
+  rowKey,
+  emptyText = "Nothing to show.",
+}: {
   columns: Column<T>[];
   rows: T[];
-  caption?: string;
+  caption: string;
   rowKey: (row: T, index: number) => string;
+  emptyText?: string;
 }) {
   return (
     <div className="table-wrap">
-      <table className="data-table">
-        {caption ? <caption>{caption}</caption> : null}
+      <table className="table">
+        <caption className="sr-only">{caption}</caption>
         <thead>
           <tr>
             {columns.map((c) => (
@@ -72,7 +167,7 @@ export function DataTable<T>({ columns, rows, caption, rowKey }: {
           {rows.length === 0 ? (
             <tr>
               <td colSpan={columns.length} className="empty">
-                No rows.
+                {emptyText}
               </td>
             </tr>
           ) : (
@@ -92,77 +187,87 @@ export function DataTable<T>({ columns, rows, caption, rowKey }: {
   );
 }
 
-/** Table twin for a chart. Every chart ships one, so values never depend on colour alone. */
-export function TableTwin({ children, label = "Table view" }: { children: ReactNode; label?: string }) {
+/** Table view for a chart. Every chart ships one, so values never depend on colour or hover. */
+export function TableView({ children, label = "Show as table" }: { children: ReactNode; label?: string }) {
   return (
-    <details className="table-twin">
+    <details className="table-view">
       <summary>{label}</summary>
       {children}
     </details>
   );
 }
 
-export function Drawer({ open, title, onClose, children }: {
-  open: boolean;
-  title: string;
-  onClose: () => void;
-  children: ReactNode;
-}) {
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+// ---------------------------------------------------------------- chart frame
 
-  if (!open) return null;
+/** Figure wrapper: title and reading guide above the chart, optional table view below. */
+export function ChartFigure({
+  label,
+  children,
+  table,
+  tableLabel,
+  note,
+}: {
+  label: string;
+  children: ReactNode;
+  table?: ReactNode;
+  tableLabel?: string;
+  note?: ReactNode;
+}) {
   return (
-    <div className="drawer-backdrop" onClick={onClose}>
-      <aside
-        className="drawer"
-        role="dialog"
-        aria-label={title}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="drawer-head">
-          <h3>{title}</h3>
-          <button type="button" className="btn ghost" onClick={onClose} aria-label="Close">
-            Close
-          </button>
-        </header>
-        <div className="drawer-body">{children}</div>
-      </aside>
-    </div>
+    <figure className="chart-figure">
+      <figcaption className="sr-only">{label}</figcaption>
+      {children}
+      {note ? <p className="chart-note">{note}</p> : null}
+      {table ? <TableView label={tableLabel}>{table}</TableView> : null}
+    </figure>
   );
 }
 
-export const SCREENS = [
-  { id: "goal", label: "1 Goal and roadmap" },
-  { id: "demand", label: "2 Demand" },
-  { id: "supply", label: "3 Supply and gaps" },
-  { id: "actions", label: "4 Actions" },
-  { id: "finance", label: "5 Finance and scenarios" },
-  { id: "brief", label: "6 CEO brief" },
-] as const;
+// ---------------------------------------------------------------- dialog
 
-export type ScreenId = (typeof SCREENS)[number]["id"];
+/** Native modal dialog: focus trap, Escape and inert background come from the platform. */
+export function Dialog({
+  open,
+  onClose,
+  title,
+  children,
+  wide = false,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: ReactNode;
+  wide?: boolean;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
 
-export function NavBar({ active, onSelect }: { active: ScreenId; onSelect: (id: ScreenId) => void }) {
+  useEffect(() => {
+    const dialog = ref.current;
+    if (!dialog) return;
+    if (open && !dialog.open) dialog.showModal();
+    if (!open && dialog.open) dialog.close();
+  }, [open]);
+
   return (
-    <nav className="nav" aria-label="Screens">
-      {SCREENS.map((s) => (
-        <button
-          key={s.id}
-          type="button"
-          className={`nav-item${s.id === active ? " active" : ""}`}
-          aria-current={s.id === active ? "page" : undefined}
-          onClick={() => onSelect(s.id)}
-        >
-          {s.label}
-        </button>
-      ))}
-    </nav>
+    <dialog
+      ref={ref}
+      className={`dialog${wide ? " dialog-wide" : ""}`}
+      aria-labelledby={titleId}
+      onClose={onClose}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="dialog-body">
+        <header className="dialog-head">
+          <h2 id={titleId}>{title}</h2>
+          <button type="button" className="btn btn-ghost" onClick={onClose}>
+            Close
+          </button>
+        </header>
+        {open ? children : null}
+      </div>
+    </dialog>
   );
 }

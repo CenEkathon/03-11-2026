@@ -44,3 +44,32 @@ export function formatMonthRange(start: string, end: string): string {
 export function formatCount(value: number): string {
   return Math.round(value).toLocaleString("en-GB");
 }
+
+/** Short month for chart axes, e.g. "Jan '27". */
+export function formatAxisMonth(ym: string): string {
+  const match = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(ym);
+  if (!match) return ym;
+  return `${MONTH_NAMES[Number(match[2]) - 1]} '${match[1].slice(2)}`;
+}
+
+/** Plain-language count of people or FTE with one decimal when fractional. */
+export function formatFteCompact(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+/** Success-metric target: shares as percent, anything else as "value unit". */
+export function formatMetricTarget(value: number, unit: string): string {
+  if (unit === "share") return formatPct(value, 0);
+  return `${Number.isInteger(value) ? value : value.toFixed(2)} ${unit}`;
+}
+
+/** Formats a number by its assumption unit: shares as percent, EUR as money, anything else with its unit. */
+export function formatByUnit(value: number, unit: string | undefined): string {
+  if (unit === "share") return formatPct(value, 1);
+  if (unit?.startsWith("EUR")) {
+    const per = unit.includes("/") ? ` per ${unit.split("/")[1]}` : "";
+    return `${formatEur(value)}${per}`;
+  }
+  if (unit === "multiplier") return `${value.toFixed(2)}×`;
+  return unit ? `${Number.isInteger(value) ? value : value.toFixed(2)} ${unit}` : String(value);
+}

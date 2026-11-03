@@ -2,20 +2,15 @@
  * Client-side mirror of the backend roadmap checks, used only to show errors before a round trip.
  * The backend stays the source of truth: a 422 from /api/plan/compute always wins.
  */
+import { monthIndex } from "./months";
+
+export { monthIndex } from "./months";
 
 export interface MilestoneDraft {
   id: string;
   start: string;
   end: string;
   depends_on: string[];
-}
-
-const MONTH_RE = /^(\d{4})-(0[1-9]|1[0-2])$/;
-
-export function monthIndex(ym: string): number | null {
-  const match = MONTH_RE.exec(ym);
-  if (!match) return null;
-  return Number(match[1]) * 12 + Number(match[2]) - 1;
 }
 
 /** Returns human-readable errors. An empty list means the draft passes the local checks. */
@@ -47,6 +42,16 @@ export function checkDraft(drafts: MilestoneDraft[]): string[] {
     }
   }
   return errors;
+}
+
+/** Per-milestone errors, so each row in the editor can show its own message. */
+export function rowErrors(drafts: MilestoneDraft[]): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const e of checkDraft(drafts)) {
+    const id = e.split(":")[0].split(" ")[0];
+    (out[id] ??= []).push(e);
+  }
+  return out;
 }
 
 /** True if any draft date differs from the applied milestone dates. */
