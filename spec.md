@@ -1,5 +1,0 @@
-## Goal
-
-## Not doing
-
-## 

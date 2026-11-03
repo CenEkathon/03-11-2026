@@ -1,0 +1,81 @@
+{
+  "_meta": {
+    "label": "MOCK ROADMAP - proposed plan requiring approval. Not generated from a real CEO strategy.",
+    "dependency_rule": "finish-to-start. Each milestone starts the month after its predecessor ends.",
+    "adoption_rule": "adoption_share_target is reached at the end of the milestone and ramps linearly from the previous target across the milestone months."
+  },
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "Governance and AI policy",
+      "description": "AI use policy, model inventory and risk classification approved.",
+      "start": "2027-01",
+      "end": "2027-03",
+      "depends_on": [],
+      "owner_team": "FCC",
+      "metric": { "name": "AI use policy and model inventory approved", "target": 1, "unit": "approval" },
+      "adoption_share_target": 0.0,
+      "is_mock": true
+    },
+    {
+      "id": "M2",
+      "name": "KYC data consolidation",
+      "description": "Single KYC data layer for retail and corporate customer files.",
+      "start": "2027-04",
+      "end": "2027-06",
+      "depends_on": ["M1"],
+      "owner_team": "DATA-ENG",
+      "metric": { "name": "Share of KYC customer files in the consolidated data layer", "target": 1.0, "unit": "share" },
+      "adoption_share_target": 0.0,
+      "is_mock": true
+    },
+    {
+      "id": "M3",
+      "name": "AI alert-triage pilot (15% of volume)",
+      "description": "Pilot of AI-assisted alert triage on one business line.",
+      "start": "2027-07",
+      "end": "2027-10",
+      "depends_on": ["M2"],
+      "owner_team": "DS-AI",
+      "metric": { "name": "AI-assisted share of alert triage in pilot", "target": 0.15, "unit": "share" },
+      "adoption_share_target": 0.15,
+      "is_mock": true
+    },
+    {
+      "id": "M4",
+      "name": "Model validation and regulatory sign-off",
+      "description": "Independent validation and regulatory sign-off required before scale-up.",
+      "start": "2027-11",
+      "end": "2028-02",
+      "depends_on": ["M3"],
+      "owner_team": "MRV",
+      "metric": { "name": "Independent validation complete with 0 open high findings", "target": 0, "unit": "open high findings" },
+      "adoption_share_target": 0.15,
+      "is_mock": true
+    },
+    {
+      "id": "M5",
+      "name": "Scale to 3 business lines (40%)",
+      "description": "AI-assisted KYC reviews scaled to three business lines.",
+      "start": "2028-03",
+      "end": "2028-06",
+      "depends_on": ["M4"],
+      "owner_team": "AML-OPS",
+      "metric": { "name": "AI-assisted share of KYC reviews across 3 business lines", "target": 0.4, "unit": "share" },
+      "adoption_share_target": 0.4,
+      "is_mock": true
+    },
+    {
+      "id": "M6",
+      "name": "Full rollout and new operating model (60%)",
+      "description": "AI-assisted review is the standard operating model in all business lines.",
+      "start": "2028-07",
+      "end": "2028-12",
+      "depends_on": ["M5"],
+      "owner_team": "DIGI",
+      "metric": { "name": "AI-assisted share of KYC reviews, all business lines", "target": 0.6, "unit": "share" },
+      "adoption_share_target": 0.6,
+      "is_mock": true
+    }
+  ]
+}

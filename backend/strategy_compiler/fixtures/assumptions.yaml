@@ -1,0 +1,212 @@
+# MOCK ASSUMPTIONS - every value is an illustrative assumption for the hackathon demo, not a
+# company figure. "low" is the CONSERVATIVE case (worse for ROI, e.g. higher cost or lower benefit).
+# "high" is the OPTIMISTIC case. The base case is used by default.
+# Edit values here or via PUT /api/assumptions; every number in the UI links back to a key here.
+
+assumptions:
+  - key: ai_cost_saving_pct
+    label: Cost-per-review saving on AI-assisted reviews
+    unit: share
+    low: 0.25
+    base: 0.35
+    high: 0.40
+    confidence: low
+    rationale: Base equals the goal target (35% cost-per-review reduction). Not observed; sensitivity range is a judgement.
+
+  - key: reviews_per_fte_year
+    label: Reviews handled per FTE per year (baseline)
+    unit: reviews/FTE/year
+    low: 1800
+    base: 2000
+    high: 2200
+    confidence: low
+    rationale: Used only to size baseline FTE and the aggregate freed-capacity view. Mock productivity assumption.
+
+  - key: loaded_cost_factor
+    label: Loaded cost factor (on-cost on salary)
+    unit: multiplier
+    low: 1.45
+    base: 1.35
+    high: 1.30
+    confidence: medium
+    rationale: Typical on-cost multiplier for employer contributions, benefits and overhead. Mock.
+
+  - key: salary_multiplier
+    label: Salary level multiplier applied to the mock salary bands
+    unit: multiplier
+    low: 1.10
+    base: 1.00
+    high: 0.95
+    confidence: low
+    rationale: Mock salary bands in config/bands are not company data. Vacancy salary text is sparse and is not used as model input.
+
+  - key: recruiter_fee_pct
+    label: Recruitment fee as share of annual salary
+    unit: share
+    low: 0.25
+    base: 0.20
+    high: 0.15
+    confidence: low
+    rationale: Mock agency or internal recruiting cost assumption.
+
+  - key: hire_onboarding_eur
+    label: One-off onboarding cost per hire
+    unit: EUR/hire
+    low: 4000
+    base: 3000
+    high: 2000
+    confidence: low
+    rationale: Equipment, induction and onboarding. Mock.
+
+  - key: time_to_hire_months
+    label: Time to hire (from programme start)
+    unit: months
+    low: 6
+    base: 4
+    high: 3
+    confidence: low
+    rationale: Lead time before a hire can start. Mock; real figure depends on the bank's recruiting process.
+
+  - key: hire_mentoring_days
+    label: Mentor days from existing staff per hire (ramp-up support)
+    unit: days/hire
+    low: 30
+    base: 20
+    high: 15
+    confidence: low
+    rationale: Ramp-up is modelled as mentoring cost, not as reduced coverage. Hires count in full from their start month, which is a labelled simplification. Mock.
+
+  - key: training_days_per_level
+    label: Training days per proficiency level gap
+    unit: days/level
+    low: 15
+    base: 12
+    high: 10
+    confidence: low
+    rationale: Mock course duration. Training consumes programme capacity in the months before the requirement starts.
+
+  - key: training_day_rate_eur
+    label: Training cost per day (course, trainer and materials)
+    unit: EUR/day
+    low: 800
+    base: 650
+    high: 550
+    confidence: low
+    rationale: Mock training cost.
+
+  - key: redeploy_onboarding_eur
+    label: One-off onboarding cost per redeployed person
+    unit: EUR/person
+    low: 800
+    base: 500
+    high: 300
+    confidence: low
+    rationale: Handover and role change. Mock.
+
+  - key: backfill_share
+    label: Share of a redeployed or reskilled person's loaded cost that must be backfilled
+    unit: share
+    low: 0.6
+    base: 0.5
+    high: 0.4
+    confidence: low
+    rationale: Business-as-usual work left behind must be covered. Mock; the real share depends on team workload.
+
+  - key: reskill_salary_uplift_pct
+    label: Salary uplift for a reskilled person moving into the new role
+    unit: share
+    low: 0.07
+    base: 0.05
+    high: 0.03
+    confidence: low
+    rationale: Only the uplift is a new recurring cost. The base salary of an existing employee is not new cost.
+
+  - key: contractor_day_rate_eur
+    label: Contractor day rate
+    unit: EUR/day
+    low: 1000
+    base: 900
+    high: 800
+    confidence: low
+    rationale: Mock external-support rate.
+
+  - key: contractor_max_share
+    label: Maximum share of a requirement covered by contractors
+    unit: share
+    low: 0.30
+    base: 0.30
+    high: 0.30
+    confidence: medium
+    rationale: Policy cap on external bridge cover, so the plan does not depend on contractors.
+
+  - key: platform_run_eur_month
+    label: Platform run cost per month (from M3 start)
+    unit: EUR/month
+    low: 30000
+    base: 25000
+    high: 20000
+    confidence: low
+    rationale: Mock licence and hosting for the triage platform.
+
+  - key: tech_change_one_off_M1
+    label: Technology and change one-off cost, M1
+    unit: EUR
+    low: 96000
+    base: 80000
+    high: 72000
+    confidence: low
+    rationale: Mock governance and change cost.
+
+  - key: tech_change_one_off_M2
+    label: Technology and change one-off cost, M2
+    unit: EUR
+    low: 480000
+    base: 400000
+    high: 360000
+    confidence: low
+    rationale: Mock data platform build and migration.
+
+  - key: tech_change_one_off_M3
+    label: Technology and change one-off cost, M3
+    unit: EUR
+    low: 300000
+    base: 250000
+    high: 225000
+    confidence: low
+    rationale: Mock pilot build and licences.
+
+  - key: tech_change_one_off_M4
+    label: Technology and change one-off cost, M4
+    unit: EUR
+    low: 144000
+    base: 120000
+    high: 108000
+    confidence: low
+    rationale: Mock validation tooling.
+
+  - key: tech_change_one_off_M5
+    label: Technology and change one-off cost, M5
+    unit: EUR
+    low: 180000
+    base: 150000
+    high: 135000
+    confidence: low
+    rationale: Mock scale-up and integration.
+
+  - key: tech_change_one_off_M6
+    label: Technology and change one-off cost, M6
+    unit: EUR
+    low: 120000
+    base: 100000
+    high: 90000
+    confidence: low
+    rationale: Mock operating model and training.
+
+  - key: discount_rate_annual
+    label: Annual discount rate (NPV only)
+    unit: share
+    low: 0.10
+    base: 0.08
+    high: 0.06
+    confidence: low
+    rationale: Mock hurdle rate. Used only for NPV, not for ROI or payback.

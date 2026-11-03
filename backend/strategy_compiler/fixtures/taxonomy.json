@@ -1,0 +1,330 @@
+{
+  "_meta": {
+    "label": "MOCK / CURATED v1 taxonomy - ESCO-aligned labels, not an official ESCO export",
+    "version": "0.1.0",
+    "esco_uri_policy": "esco_uri is null until verified against the ESCO release in the hackathon kit. Never invent URIs.",
+    "matching": "Aliases are matched case-insensitively on word boundaries in EN/NL/FR. Generic aliases only count with confidence 0.5, which is below the 0.6 threshold, so they stay unmapped unless a stronger alias also matches."
+  },
+  "skills": [
+    {
+      "id": "kyc",
+      "label": "Know your customer (KYC)",
+      "family": "financial_crime",
+      "esco_uri": null,
+      "aliases": { "en": ["know your customer", "kyc"], "nl": ["klantenonderzoek", "kyc"], "fr": ["connaissance client", "kyc"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    },
+    {
+      "id": "aml_monitoring",
+      "label": "Anti-money laundering (AML) monitoring",
+      "family": "financial_crime",
+      "esco_uri": null,
+      "aliases": { "en": ["anti-money laundering", "aml", "transaction monitoring"], "nl": ["anti-witwas", "witwassen", "transactiemonitoring"], "fr": ["lutte anti-blanchiment", "blanchiment", "surveillance des transactions"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    },
+    {
+      "id": "sanctions_screening",
+      "label": "Sanctions screening",
+      "family": "financial_crime",
+      "esco_uri": null,
+      "aliases": { "en": ["sanctions screening"], "nl": ["sanctiescreening", "sanctiecontrole"], "fr": ["filtrage des sanctions"] },
+      "generic_aliases": { "en": ["sanctions"], "nl": [], "fr": ["sanctions"] }
+    },
+    {
+      "id": "suspicious_activity_reporting",
+      "label": "Suspicious activity reporting",
+      "family": "financial_crime",
+      "esco_uri": null,
+      "aliases": { "en": ["suspicious activity", "suspicious transaction"], "nl": ["atypische transactie", "ongebruikelijke transactie"], "fr": ["opération suspecte", "déclaration de soupçon"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    },
+    {
+      "id": "fraud_prevention",
+      "label": "Fraud prevention",
+      "family": "financial_crime",
+      "esco_uri": null,
+      "aliases": { "en": ["fraud prevention", "fraud adviser", "fraud operations"], "nl": ["fraudepreventie", "fraudeonderzoek"], "fr": ["prévention de la fraude"] },
+      "generic_aliases": { "en": ["fraud"], "nl": ["fraude"], "fr": ["fraude"] }
+    },
+    {
+      "id": "financial_investigation",
+      "label": "Financial investigation",
+      "family": "financial_crime",
+      "esco_uri": null,
+      "aliases": { "en": ["financial investigation", "financial investigator"], "nl": ["financieel onderzoek"], "fr": ["enquête financière"] },
+      "generic_aliases": { "en": ["investigator"], "nl": ["onderzoeker"], "fr": [] }
+    },
+    {
+      "id": "data_engineering",
+      "label": "Data engineering",
+      "family": "data",
+      "esco_uri": null,
+      "aliases": { "en": ["data engineer", "data engineering", "big data", "data pipeline", "etl"], "nl": ["data engineer", "dataengineering"], "fr": ["ingénieur data", "ingénierie des données"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    },
+    {
+      "id": "sql",
+      "label": "SQL",
+      "family": "data",
+      "esco_uri": null,
+      "aliases": { "en": ["sql"], "nl": ["sql"], "fr": ["sql"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    },
+    {
+      "id": "python",
+      "label": "Python programming",
+      "family": "data",
+      "esco_uri": null,
+      "aliases": { "en": ["python"], "nl": ["python"], "fr": ["python"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    },
+    {
+      "id": "data_quality",
+      "label": "Data quality management",
+      "family": "data",
+      "esco_uri": null,
+      "aliases": { "en": ["data quality"], "nl": ["datakwaliteit"], "fr": ["qualité des données"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    },
+    {
+      "id": "data_governance",
+      "label": "Data governance",
+      "family": "data",
+      "esco_uri": null,
+      "aliases": { "en": ["data governance", "master data", "data management"], "nl": ["datagovernance", "datamanagement"], "fr": ["gouvernance des données"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    },
+    {
+      "id": "data_analysis",
+      "label": "Data analysis",
+      "family": "data",
+      "esco_uri": null,
+      "aliases": { "en": ["data analyst", "data analysis"], "nl": ["data analist", "data-analyse", "dataanalyse"], "fr": ["analyste de données", "analyse de données"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    },
+    {
+      "id": "cloud_data_platforms",
+      "label": "Cloud data platforms",
+      "family": "technology",
+      "esco_uri": null,
+      "aliases": { "en": ["azure", "aws", "google cloud", "cloud platform", "cloud engineer"], "nl": ["cloudplatform", "cloud engineer"], "fr": ["plateforme cloud"] },
+      "generic_aliases": { "en": ["cloud"], "nl": [], "fr": [] }
+    },
+    {
+      "id": "machine_learning",
+      "label": "Machine learning",
+      "family": "ai_ml",
+      "esco_uri": null,
+      "aliases": { "en": ["machine learning", "ml engineer"], "nl": ["machinaal leren", "machine learning"], "fr": ["apprentissage automatique"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    },
+    {
+      "id": "artificial_intelligence",
+      "label": "Artificial intelligence",
+      "family": "ai_ml",
+      "esco_uri": null,
+      "aliases": { "en": ["artificial intelligence", "ai engineer"], "nl": ["kunstmatige intelligentie"], "fr": ["intelligence artificielle"] },
+      "generic_aliases": { "en": ["ai"], "nl": ["ai"], "fr": ["ia"] }
+    },
+    {
+      "id": "nlp",
+      "label": "Natural language processing",
+      "family": "ai_ml",
+      "esco_uri": null,
+      "aliases": { "en": ["natural language processing", "nlp", "text mining"], "nl": ["tekstanalyse", "natural language processing"], "fr": ["traitement du langage naturel", "traitement automatique du langage"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    },
+    {
+      "id": "generative_ai",
+      "label": "Generative AI",
+      "family": "ai_ml",
+      "esco_uri": null,
+      "aliases": { "en": ["generative ai", "genai", "large language model", "llm"], "nl": ["generatieve ai", "generatieve kunstmatige intelligentie"], "fr": ["ia générative", "intelligence artificielle générative"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    },
+    {
+      "id": "mlops",
+      "label": "MLOps",
+      "family": "ai_ml",
+      "esco_uri": null,
+      "aliases": { "en": ["mlops", "model deployment", "ml ops"], "nl": ["mlops", "modeldeployment"], "fr": ["mlops"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    },
+    {
+      "id": "statistical_modelling",
+      "label": "Statistical modelling",
+      "family": "ai_ml",
+      "esco_uri": null,
+      "aliases": { "en": ["statistical modelling", "statistical modeling"], "nl": ["statistisch modelleren"], "fr": ["modélisation statistique"] },
+      "generic_aliases": { "en": ["statistics", "statistical"], "nl": ["statistiek"], "fr": ["statistique"] }
+    },
+    {
+      "id": "model_validation",
+      "label": "Model validation",
+      "family": "model_risk",
+      "esco_uri": null,
+      "aliases": { "en": ["model validation", "model validator"], "nl": ["modelvalidatie", "model validator"], "fr": ["validation de modèles", "validation des modèles"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    },
+    {
+      "id": "model_risk_management",
+      "label": "Model risk management",
+      "family": "model_risk",
+      "esco_uri": null,
+      "aliases": { "en": ["model risk"], "nl": ["modelrisico"], "fr": ["risque de modèle"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    },
+    {
+      "id": "explainable_ai",
+      "label": "Explainable AI",
+      "family": "model_risk",
+      "esco_uri": null,
+      "aliases": { "en": ["explainable ai", "explainability"], "nl": ["uitlegbaarheid", "verklaarbaarheid"], "fr": ["explicabilité"] },
+      "generic_aliases": { "en": ["explainable"], "nl": [], "fr": [] }
+    },
+    {
+      "id": "ai_act_gdpr_compliance",
+      "label": "AI Act and GDPR compliance",
+      "family": "regulation",
+      "esco_uri": null,
+      "aliases": { "en": ["eu ai act", "ai act", "gdpr", "data protection"], "nl": ["avg", "gegevensbescherming"], "fr": ["rgpd", "protection des données"] },
+      "generic_aliases": { "en": ["privacy"], "nl": ["privacy"], "fr": [] }
+    },
+    {
+      "id": "regulatory_compliance",
+      "label": "Regulatory compliance",
+      "family": "regulation",
+      "esco_uri": null,
+      "aliases": { "en": ["regulatory compliance", "regulatory reporting", "compliance assurance"], "nl": ["regelgeving"], "fr": ["conformité réglementaire"] },
+      "generic_aliases": { "en": ["compliance"], "nl": ["compliance"], "fr": ["conformité"] }
+    },
+    {
+      "id": "ai_governance",
+      "label": "AI governance",
+      "family": "regulation",
+      "esco_uri": null,
+      "aliases": { "en": ["ai governance", "responsible ai", "ai ethics"], "nl": ["ai-governance", "verantwoorde ai"], "fr": ["gouvernance de l'ia"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    },
+    {
+      "id": "risk_assessment",
+      "label": "Risk assessment",
+      "family": "regulation",
+      "esco_uri": null,
+      "aliases": { "en": ["risk assessment"], "nl": ["risicoanalyse"], "fr": ["évaluation des risques"] },
+      "generic_aliases": { "en": ["risk management"], "nl": ["risicobeheer"], "fr": [] }
+    },
+    {
+      "id": "internal_audit",
+      "label": "Internal audit",
+      "family": "regulation",
+      "esco_uri": null,
+      "aliases": { "en": ["internal audit"], "nl": ["interne audit"], "fr": ["audit interne"] },
+      "generic_aliases": { "en": ["audit"], "nl": ["audit"], "fr": ["audit"] }
+    },
+    {
+      "id": "credit_risk",
+      "label": "Credit risk",
+      "family": "risk",
+      "esco_uri": null,
+      "aliases": { "en": ["credit risk"], "nl": ["kredietrisico"], "fr": ["risque de crédit"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    },
+    {
+      "id": "product_ownership",
+      "label": "Product ownership",
+      "family": "delivery",
+      "esco_uri": null,
+      "aliases": { "en": ["product owner", "product management"], "nl": ["product owner", "productmanagement"], "fr": ["product owner"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    },
+    {
+      "id": "agile_delivery",
+      "label": "Agile delivery",
+      "family": "delivery",
+      "esco_uri": null,
+      "aliases": { "en": ["agile delivery", "scrum"], "nl": ["scrum"], "fr": ["scrum"] },
+      "generic_aliases": { "en": ["agile"], "nl": ["agile"], "fr": ["agile"] }
+    },
+    {
+      "id": "change_management",
+      "label": "Change management",
+      "family": "delivery",
+      "esco_uri": null,
+      "aliases": { "en": ["change management", "change manager"], "nl": ["verandermanagement"], "fr": ["gestion du changement", "conduite du changement"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    },
+    {
+      "id": "process_redesign",
+      "label": "Process redesign and automation",
+      "family": "delivery",
+      "esco_uri": null,
+      "aliases": { "en": ["process redesign", "process automation", "process improvement"], "nl": ["procesoptimalisatie", "procesautomatisering"], "fr": ["automatisation des processus", "optimisation des processus"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    },
+    {
+      "id": "stakeholder_management",
+      "label": "Stakeholder management",
+      "family": "delivery",
+      "esco_uri": null,
+      "aliases": { "en": ["stakeholder management"], "nl": ["stakeholdermanagement"], "fr": ["gestion des parties prenantes"] },
+      "generic_aliases": { "en": ["stakeholder"], "nl": [], "fr": [] }
+    },
+    {
+      "id": "solution_architecture",
+      "label": "Solution architecture",
+      "family": "technology",
+      "esco_uri": null,
+      "aliases": { "en": ["solution architect", "solution architecture", "enterprise architect"], "nl": ["solution architect", "enterprise architect"], "fr": ["architecte solution"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    },
+    {
+      "id": "devops",
+      "label": "DevOps",
+      "family": "technology",
+      "esco_uri": null,
+      "aliases": { "en": ["devops", "ci/cd"], "nl": ["devops"], "fr": ["devops"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    },
+    {
+      "id": "cyber_security",
+      "label": "Cyber security",
+      "family": "technology",
+      "esco_uri": null,
+      "aliases": { "en": ["cyber security", "cybersecurity", "information security"], "nl": ["cyberbeveiliging", "informatiebeveiliging"], "fr": ["cybersécurité", "sécurité de l'information"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    },
+    {
+      "id": "identity_access_management",
+      "label": "Identity and access management",
+      "family": "technology",
+      "esco_uri": null,
+      "aliases": { "en": ["identity and access", "access management"], "nl": ["toegangsbeheer"], "fr": ["gestion des accès"] },
+      "generic_aliases": { "en": ["iam"], "nl": [], "fr": [] }
+    },
+    {
+      "id": "case_quality_assurance",
+      "label": "Case quality assurance",
+      "family": "operations",
+      "esco_uri": null,
+      "aliases": { "en": ["quality assurance", "quality control"], "nl": ["kwaliteitscontrole", "kwaliteitsbewaking"], "fr": ["contrôle qualité", "assurance qualité"] },
+      "generic_aliases": { "en": ["qa"], "nl": [], "fr": [] }
+    },
+    {
+      "id": "document_review",
+      "label": "Document review",
+      "family": "operations",
+      "esco_uri": null,
+      "aliases": { "en": ["document review", "case review"], "nl": ["dossierbeoordeling", "documentbeoordeling"], "fr": ["revue de dossiers", "examen de dossiers"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    },
+    {
+      "id": "customer_operations",
+      "label": "Customer operations",
+      "family": "operations",
+      "esco_uri": null,
+      "aliases": { "en": ["customer operations", "customer service"], "nl": ["klantenservice", "klantenoperaties"], "fr": ["service client"] },
+      "generic_aliases": { "en": [], "nl": [], "fr": [] }
+    }
+  ]
+}

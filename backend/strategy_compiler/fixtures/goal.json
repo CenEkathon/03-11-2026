@@ -1,0 +1,24 @@
+{
+  "title": "MOCK GOAL: AI-assisted KYC/AML reviews",
+  "company_id": "NORTHWIND",
+  "statement": "MOCK: By 31 Dec 2028, at least 60% of periodic KYC/AML reviews and alert triage are AI-assisted, cost per review falls by 35%, and no forced redundancies occur.",
+  "baseline": {
+    "reviews_per_year": 240000,
+    "cost_per_review_eur": 48,
+    "ai_assisted_share": 0
+  },
+  "target": {
+    "ai_assisted_share": 0.6,
+    "cost_per_review_reduction_pct": 0.35
+  },
+  "deadline": "2028-12-31",
+  "horizon_start": "2027-01",
+  "horizon_end": "2028-12",
+  "constraints": [
+    "No forced redundancies",
+    "Prioritise reskilling and redeployment",
+    "Model risk sign-off before scale-up",
+    "Workforce decisions require HR, legal and employee-representation review"
+  ],
+  "is_mock": true
+}

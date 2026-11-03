@@ -1,0 +1,16 @@
+{
+  "id": "NORTHWIND",
+  "name": "Northwind Bank (fictional)",
+  "description": "MOCK: fictional retail and corporate bank for the hackathon demo. Not a real company. Teams, people and figures are synthetic.",
+  "is_mock": true,
+  "teams": [
+    { "id": "AML-OPS", "name": "AML Operations (KYC and alert triage)", "contributing": true, "is_mock": true },
+    { "id": "FCC", "name": "Financial Crime Compliance", "contributing": true, "is_mock": true },
+    { "id": "DATA-ENG", "name": "Data Engineering", "contributing": true, "is_mock": true },
+    { "id": "DS-AI", "name": "Data Science and AI", "contributing": true, "is_mock": true },
+    { "id": "MRV", "name": "Model Risk and Validation", "contributing": true, "is_mock": true },
+    { "id": "PLAT", "name": "IT Platforms and Cloud", "contributing": true, "is_mock": true },
+    { "id": "DIGI", "name": "Product and Digital Change", "contributing": true, "is_mock": true },
+    { "id": "RISK", "name": "Risk and Regulatory Reporting", "contributing": false, "is_mock": true }
+  ]
+}

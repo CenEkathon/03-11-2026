@@ -1,1 +1,14 @@
 .env
+
+# Hackathon inputs: the parquet is 126 MB and the PDF contains server credentials. Never commit them.
+data/
+TechWolf*.pdf
+
+# Generated outputs and local caches
+data/derived/
+backend/.cache/
+backend/.venv/
+backend/**/__pycache__/
+backend/.pytest_cache/
+frontend/node_modules/
+frontend/dist/
