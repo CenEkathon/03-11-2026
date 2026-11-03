@@ -80,6 +80,10 @@ export function AppShell({ page, onNavigate, caseId, onCaseChange, busy, edited,
         <div className="sidebar-foot">
           <div className="foot-label">Theme</div>
           <Segmented size="sm" label="Theme" options={THEME_OPTIONS} value={preference} onChange={setPreference} />
+          <button type="button" className="btn btn-ghost btn-block" onClick={() => setLegendOpen(true)}>
+            What do the labels mean?
+          </button>
+          <p className="brand-credit small muted">by clanker wankers</p>
         </div>
       </aside>
 
