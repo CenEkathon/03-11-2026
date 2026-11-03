@@ -22,8 +22,9 @@ function readStoredPreference(): ThemePreference {
   }
 }
 
+/** Only called in the browser (the app is client-rendered), so window is always present. */
 function systemTheme(): Theme {
-  return typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 /** Owns the theme preference. Writes data-theme on <html>; the CSS handles the rest. */
