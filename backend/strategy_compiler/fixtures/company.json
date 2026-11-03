@@ -1,7 +1,7 @@
 {
-  "id": "NORTHWIND",
-  "name": "Northwind Bank (fictional)",
-  "description": "MOCK: fictional retail and corporate bank for the hackathon demo. Not a real company. Teams, people and figures are synthetic.",
+  "id": "KBC",
+  "name": "KBC (mock example, not real KBC data)",
+  "description": "MOCK: illustrative example case named after the Belgian bank KBC, for the hackathon demo. Not KBC's strategy, staff or figures. Teams, people and figures are synthetic.",
   "is_mock": true,
   "teams": [
     { "id": "AML-OPS", "name": "AML Operations (KYC and alert triage)", "contributing": true, "is_mock": true },

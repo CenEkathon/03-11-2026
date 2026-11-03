@@ -1,7 +1,7 @@
 [project]
 name = "strategy-compiler"
 version = "0.1.0"
-description = "MOCK hackathon demo: CEO goal -> workforce and financial execution plan (Northwind Bank is fictional)."
+description = "MOCK hackathon demo: CEO goal -> workforce and financial execution plan (KBC is an illustrative example name only; all data is mock)."
 requires-python = ">=3.12"
 dependencies = [
     "duckdb>=1.1",

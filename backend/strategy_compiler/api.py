@@ -39,7 +39,7 @@ from .roadmap import RoadmapError
 app = FastAPI(
     title="Strategy Compiler (MOCK hackathon demo)",
     version="0.1.0",
-    description="MOCK goal, MOCK roadmap, SYNTHETIC workforce, ESTIMATED finance. Northwind Bank is fictional.",
+    description="MOCK goal, MOCK roadmap, SYNTHETIC workforce, ESTIMATED finance. KBC is used only as an illustrative example name. Nothing describes KBC's real strategy, staff or figures.",
 )
 app.add_middleware(
     CORSMiddleware,

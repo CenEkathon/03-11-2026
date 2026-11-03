@@ -2,7 +2,7 @@
   "name": "strategy-compiler-ui",
   "private": true,
   "version": "0.1.0",
-  "description": "MOCK hackathon demo UI. Northwind Bank is fictional. All figures are mock estimates.",
+  "description": "MOCK hackathon demo UI. KBC is an illustrative example name only. All figures are mock estimates, not KBC data.",
   "type": "module",
   "scripts": {
     "dev": "vite",

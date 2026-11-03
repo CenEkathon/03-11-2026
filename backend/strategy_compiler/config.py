@@ -56,7 +56,7 @@ SCENARIO_META: dict[str, dict[str, Any]] = {
 }
 
 LABELS: dict[str, str] = {
-    "goal": "MOCK GOAL: fictional Northwind Bank",
+    "goal": "MOCK GOAL: illustrative KBC example case (not KBC's strategy)",
     "roadmap": "MOCK ROADMAP: proposed plan requiring approval",
     "workforce": "SYNTHETIC WORKFORCE: fictional employees, no real people",
     "assumptions": "MOCK ASSUMPTIONS: illustrative, editable, not company figures",

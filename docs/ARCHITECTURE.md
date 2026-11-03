@@ -1,6 +1,6 @@
 # Architecture: Strategy Compiler (MOCK hackathon demo)
 
-Status: implemented in thin vertical slices. Northwind Bank, the goal, the roadmap and the workforce are fictional. Every figure is a mock estimate.
+Status: implemented in thin vertical slices. The KBC example name is illustrative only. The goal, roadmap and workforce are mock, and nothing describes KBC's real strategy, staff or figures. Every figure is a mock estimate.
 
 ## 1. Layers and boundaries
 

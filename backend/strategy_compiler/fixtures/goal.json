@@ -1,6 +1,6 @@
 {
   "title": "MOCK GOAL: AI-assisted KYC/AML reviews",
-  "company_id": "NORTHWIND",
+  "company_id": "KBC",
   "statement": "MOCK: By 31 Dec 2028, at least 60% of periodic KYC/AML reviews and alert triage are AI-assisted, cost per review falls by 35%, and no forced redundancies occur.",
   "baseline": {
     "reviews_per_year": 240000,

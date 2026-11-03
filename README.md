@@ -2,7 +2,7 @@
 
 Decision support prototype. It turns a mock CEO goal into a workforce and financial execution plan.
 
-**All data here is mock or synthetic.** Northwind Bank is fictional. The goal, roadmap, employees and cost figures are demo inputs. Vacancy evidence is an external 2021 observation. Nothing describes a real company or real people.
+**All data here is mock or synthetic.** KBC is used only as an illustrative example name. Nothing describes KBC's real strategy, staff or figures. The goal, roadmap, employees and cost figures are demo inputs. Vacancy evidence is an external 2021 observation. Nothing describes a real company or real people.
 
 Start with `CLAUDE.md`, `docs/ARCHITECTURE.md` and `docs/PRODUCT_SPEC.md`.
 

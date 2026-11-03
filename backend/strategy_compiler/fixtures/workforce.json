@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "label": "SYNTHETIC WORKFORCE - fictional employees of the fictional Northwind Bank. Not real people.",
+    "label": "SYNTHETIC WORKFORCE - fictional employees in an illustrative KBC example case. Not real people, not KBC staff.",
     "generator": "backend/tools/gen_workforce.py",
     "seed": 20261103,
     "availability_meaning": "Share of FTE available for programme work after business-as-usual load.",

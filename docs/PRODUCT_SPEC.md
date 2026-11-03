@@ -6,7 +6,7 @@ Replaces the empty `spec.md` skeleton, which was removed from the working tree. 
 Show what happens after a CEO gives a future business goal. The app turns it into a workforce and financial execution plan: which skills and people each milestone needs, how current employees could be reskilled or redeployed, what has to be hired, and what the plan costs and returns.
 
 ## Demo case (all MOCK, clearly labelled in the UI)
-- **Company:** Northwind Bank, fictional.
+- **Company:** KBC, used only as an illustrative example name. Nothing describes KBC's real strategy, staff or figures.
 - **Goal:** by 31 Dec 2028, at least 60% of KYC/AML reviews and alert triage are AI-assisted, and cost per review falls 35%. Constraints: no forced redundancies, reskilling and redeployment first, and model risk sign-off before scale-up.
 - **Baseline (mock):** 240,000 reviews a year at EUR 48 each, with 0% AI-assisted.
 - **Roadmap:** six milestones, a proposed plan requiring approval (M1 governance → M6 full rollout). Dates and metrics are in `fixtures/roadmap.json`.

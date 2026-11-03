@@ -89,7 +89,7 @@ export function AppShell({ page, onNavigate, caseId, onCaseChange, busy, edited,
       <div className="workspace">
         <header className="topbar">
           <div className="topbar-title">
-            <span className="fictional">Northwind Bank (fictional)</span>
+            <span className="fictional">KBC (mock example, not real KBC data)</span>
             <span className="topbar-sep" aria-hidden="true">
               /
             </span>

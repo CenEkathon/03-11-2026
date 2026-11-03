@@ -1,4 +1,4 @@
-"""Deterministic generator for the SYNTHETIC Northwind workforce fixture.
+"""Deterministic generator for the SYNTHETIC KBC-example workforce fixture.
 
 Usage (from backend/):  uv run python tools/gen_workforce.py
 
@@ -135,7 +135,7 @@ def main() -> None:
     employees = build()
     payload = {
         "_meta": {
-            "label": "SYNTHETIC WORKFORCE - fictional employees of the fictional Northwind Bank. Not real people.",
+            "label": "SYNTHETIC WORKFORCE - fictional employees in an illustrative KBC example case. Not real people, not KBC staff.",
             "generator": "backend/tools/gen_workforce.py",
             "seed": SEED,
             "availability_meaning": "Share of FTE available for programme work after business-as-usual load.",
