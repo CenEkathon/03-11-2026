@@ -11,7 +11,7 @@ data/vacancies_2021.parquet (external, git-ignored)
 fixtures/vacancy_evidence.json  (aggregated, committed)     skills/mapper.py + fixtures/taxonomy.json
         │                                                          │
 fixtures/{company,goal,roadmap,requirements,assumptions.yaml,       │
-           workforce.json}  ── tools/gen_workforce.py (seeded)      │
+           workforce.csv}  ── tools/gen_workforce.py (seeded)      │
         │                                                          │
         ▼                                                          ▼
 roadmap.py ─► demand.py ─► supply.py (Ledger) ─► planner.py ─► finance.py ─► engine.py ─► api.py ─► frontend
@@ -118,7 +118,7 @@ All rules are deterministic and covered by tests in `backend/tests/`.
 |---|---|---|---|
 | 1 | Overlapping milestone windows, with some finish-to-start dependencies | A strict chain of six consecutive milestones that fit in 24 months | Overlaps conflicted with finish-to-start, and six 6-month milestones cannot fit in 24 months |
 | 2 | Hire productivity ramp reduces coverage | Ramp is a mentoring cost (`hire_mentoring_days`) and coverage is full from the start | Keeps the ledger simple and makes "hybrid never has more unmet FTE than hire-led" hold by construction. This is a labelled simplification |
-| 3 | `workforce.csv` | `workforce.json` | Skills are a nested map of proficiencies per person |
+| 3 | `workforce.csv` | `workforce.csv`, now the only workforce file. Skills and training are JSON in one cell each (`skills_json`, `training_json`). The JSON version was removed. The loaded records are identical | Matches the approved plan. The nested fields are kept as JSON cells |
 | 4 | About 60 taxonomy skills | About 40 skills | Time. The taxonomy is extendable and the interface is ready for ESCO |
 | 5 | Evidence keyed by job family | Keyed by skill, family and country | Family is derived from the taxonomy. A job-family classifier is out of scope |
 | 6 | Update `spec.md` | `spec.md` was deleted in the working tree before this work, so it was **not** recreated. The spec is in `docs/PRODUCT_SPEC.md` | Avoids recreating a file you removed. Tell us if you want it back |

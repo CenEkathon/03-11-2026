@@ -6,6 +6,8 @@ constant that is not a business assumption (business assumptions live in fixture
 
 from __future__ import annotations
 
+import csv
+import io
 import json
 from functools import lru_cache
 from pathlib import Path
@@ -18,6 +20,7 @@ from .contracts import (
     CaseId,
     Company,
     Employee,
+    TrainingRecord,
     Goal,
     Milestone,
     Taxonomy,
@@ -95,9 +98,37 @@ def load_taxonomy() -> Taxonomy:
     return Taxonomy.model_validate(_read_json("taxonomy.json"))
 
 
+def parse_workforce_csv(text: str) -> tuple[Employee, ...]:
+    """Employees from the synthetic workforce CSV. skills_json and training_json hold JSON in one cell each."""
+    reader = csv.DictReader(io.StringIO(text))
+    employees = []
+    for row in reader:
+        employees.append(
+            Employee(
+                employee_id=row["employee_id"],
+                team_id=row["team_id"],
+                role=row["role"],
+                grade=row["grade"],
+                fte=float(row["fte"]),
+                availability=float(row["availability"]),
+                cost_band=row["cost_band"],
+                skills={k: int(v) for k, v in json.loads(row["skills_json"]).items()},
+                training_history=[TrainingRecord.model_validate(t) for t in json.loads(row["training_json"])],
+                is_mock=_parse_bool(row["is_mock"]),
+            )
+        )
+    return tuple(employees)
+
+
+def _parse_bool(value: str) -> bool:
+    if value.strip().lower() not in {"true", "false"}:
+        raise ValueError(f"is_mock must be true or false, got {value!r}")
+    return value.strip().lower() == "true"
+
+
 @lru_cache(maxsize=None)
 def load_employees() -> tuple[Employee, ...]:
-    return tuple(Employee.model_validate(e) for e in _read_json("workforce.json")["employees"])
+    return parse_workforce_csv((FIXTURES_DIR / "workforce.csv").read_text(encoding="utf-8"))
 
 
 @lru_cache(maxsize=None)
