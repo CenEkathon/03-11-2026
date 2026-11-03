@@ -69,7 +69,7 @@ export function Finance({ shared }: { shared: Shared }) {
       key: id,
       header: SCENARIO_SHORT_LABEL[id],
       numeric: true,
-      render: (r: (typeof cumulative)[number]) => formatEur(r[id] ?? 0),
+      render: (r: (typeof cumulative)[number]) => formatEur(r[id]),
     })),
   ];
 

@@ -55,7 +55,7 @@ export function Intake({ onSubmit }: Props) {
 
   const submit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!canSubmit || !file) return;
+    if (!file || !canSubmit) return;
     onSubmit({ text: text.trim(), fileName: file.name, workers: file.summary });
   };
 

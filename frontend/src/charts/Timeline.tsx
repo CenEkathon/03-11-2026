@@ -119,7 +119,7 @@ export function Timeline({
               {valid ? (
                 <div
                   className="tl-bar"
-                  style={{ gridColumn: `${s} / ${(e ?? lastCol) + 1}`, gridRow: r }}
+                  style={{ gridColumn: `${s} / ${e + 1}`, gridRow: r }}
                   role="img"
                   aria-label={`${row.id} ${row.name}: ${formatMonth(row.start)} to ${formatMonth(row.end)}. AI-assisted share ${formatPct(row.share, 0)} at end.`}
                 >

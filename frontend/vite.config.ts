@@ -17,12 +17,18 @@ export default defineConfig({
   test: {
     include: ["src/**/*.test.{ts,tsx}"],
     environment: "jsdom",
+    setupFiles: ["src/test/setup.ts"],
     coverage: {
       provider: "v8",
       include: ["src/**/*.{ts,tsx}"],
-      exclude: ["src/api/schema.ts", "src/main.tsx", "src/**/*.test.{ts,tsx}"],
-      reporter: ["text", "html"],
-      thresholds: { lines: 100, functions: 100, branches: 100, statements: 100 },
+      // schema.ts is generated from the OpenAPI document; tests and test helpers are not product code.
+      exclude: ["src/api/schema.ts", "src/test/**", "src/**/*.test.{ts,tsx}"],
+      thresholds: {
+        statements: 100,
+        branches: 100,
+        functions: 100,
+        lines: 100,
+      },
     },
   },
 });

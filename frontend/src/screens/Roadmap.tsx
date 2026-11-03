@@ -7,8 +7,17 @@ import { formatMetricTarget, formatMonth } from "../lib/format";
 import { checkDraft, isDirty, rowErrors, type MilestoneDraft } from "../lib/roadmap";
 import { monthFromIndex, monthIndex } from "../lib/months";
 
-function toDrafts(milestones: Milestone[]): MilestoneDraft[] {
-  return milestones.map((m) => ({ id: m.id, start: m.start, end: m.end, depends_on: m.depends_on ?? [] }));
+type Dates = { start: string; end: string };
+
+/** One editor row: its draft dates, plus the milestone it belongs to, so every row always has its details. */
+type Row = MilestoneDraft & { milestone: Milestone };
+
+/** Each milestone with its draft dates: the user's edit if there is one, otherwise the applied dates. */
+function rowsOf(milestones: Milestone[], edits: Record<string, Dates>): Row[] {
+  return milestones.map((m) => {
+    const dates = edits[m.id] ?? { start: m.start, end: m.end };
+    return { id: m.id, start: dates.start, end: dates.end, depends_on: m.depends_on ?? [], milestone: m };
+  });
 }
 
 /** Months to draw: the horizon, widened if a draft moves outside it. */
@@ -29,59 +38,56 @@ function timelineMonths(horizonStart: string, horizonEnd: string, drafts: Milest
 export function Roadmap({ shared, controls }: { shared: Shared; controls: Controls }) {
   const { plan, caseInfo } = shared;
   const teamName = useMemo(() => Object.fromEntries(caseInfo.company.teams.map((t) => [t.id, t.name])), [caseInfo]);
-  const [drafts, setDrafts] = useState<MilestoneDraft[]>(() => toDrafts(plan.milestones));
+  const [edits, setEdits] = useState<Record<string, Dates>>({});
   const [localErrors, setLocalErrors] = useState<string[]>([]);
   const [serverErrors, setServerErrors] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
-  // When the applied plan changes (accepted edit or case change), reset the draft to it.
+  // When the applied plan changes (accepted edit or case change), drop the edits and the messages.
   useEffect(() => {
-    setDrafts(toDrafts(plan.milestones));
+    setEdits({});
     setLocalErrors([]);
     setServerErrors([]);
   }, [plan.milestones]);
 
+  const rows = useMemo(() => rowsOf(plan.milestones, edits), [plan.milestones, edits]);
   const applied = useMemo(
     () => Object.fromEntries(plan.milestones.map((m) => [m.id, { start: m.start, end: m.end }])),
     [plan.milestones],
   );
-  const dirty = isDirty(drafts, applied);
-  const perRow = rowErrors(drafts);
-  const milestoneById = useMemo(() => new Map(plan.milestones.map((m) => [m.id, m])), [plan.milestones]);
+  const dirty = isDirty(rows, applied);
+  const perRow = rowErrors(rows);
 
-  const months = timelineMonths(plan.goal.horizon_start, plan.goal.horizon_end, drafts);
-  const timelineRows: TimelineRow[] = drafts.map((d) => {
-    const m = milestoneById.get(d.id);
-    return {
-      id: d.id,
-      name: m?.name ?? d.id,
-      owner: teamName[m?.owner_team ?? ""] ?? "Owner not set",
-      start: d.start,
-      end: d.end,
-      dependsOn: d.depends_on,
-      share: m?.adoption_share_target ?? 0,
-    };
-  });
+  const months = timelineMonths(plan.goal.horizon_start, plan.goal.horizon_end, rows);
+  const timelineRows: TimelineRow[] = rows.map((d) => ({
+    id: d.id,
+    name: d.milestone.name,
+    owner: teamName[d.milestone.owner_team] ?? "Owner not set",
+    start: d.start,
+    end: d.end,
+    dependsOn: d.depends_on,
+    share: d.milestone.adoption_share_target,
+  }));
 
   const updateDraft = (id: string, field: "start" | "end", value: string) => {
-    setDrafts((prev) => prev.map((d) => (d.id === id ? { ...d, [field]: value } : d)));
+    setEdits((prev) => ({ ...prev, [id]: { ...(prev[id] ?? applied[id]), [field]: value } }));
     setServerErrors([]);
   };
 
   const apply = async () => {
-    const errors = checkDraft(drafts);
+    const errors = checkDraft(rows);
     setLocalErrors(errors);
     setServerErrors([]);
     if (errors.length > 0) return;
     setSaving(true);
-    const dates = Object.fromEntries(drafts.map((d) => [d.id, { start: d.start, end: d.end }]));
+    const dates = Object.fromEntries(rows.map((d) => [d.id, { start: d.start, end: d.end }]));
     const result = await controls.applyRoadmap(dates);
     setSaving(false);
     if (result) setServerErrors(result);
   };
 
   const discard = () => {
-    setDrafts(toDrafts(plan.milestones));
+    setEdits({});
     setLocalErrors([]);
     setServerErrors([]);
   };
@@ -93,7 +99,7 @@ export function Roadmap({ shared, controls }: { shared: Shared; controls: Contro
     <>
       <PageHeader
         title="Roadmap"
-        lead="Six milestones, each starting after the one before it ends. Change a start or end month and the timeline updates. Apply to recalculate costs and workforce needs."
+        lead={`${plan.milestones.length} milestones, each starting after the one before it ends. Change a start or end month and the timeline updates. Apply to recalculate costs and workforce needs.`}
         actions={<LabelBadge labelKey="roadmap" />}
       />
 
@@ -129,18 +135,18 @@ export function Roadmap({ shared, controls }: { shared: Shared; controls: Contro
               </tr>
             </thead>
             <tbody>
-              {drafts.map((d) => {
-                const m = milestoneById.get(d.id);
+              {rows.map((d) => {
+                const m = d.milestone;
                 const errs = perRow[d.id] ?? [];
                 return (
                   <tr key={d.id} className={errs.length ? "row-invalid" : undefined}>
                     <td>
                       <div className="cell-title">
-                        <span className="tl-id">{d.id}</span> {m?.name}
+                        <span className="tl-id">{d.id}</span> {m.name}
                       </div>
-                      <div className="muted small">{m?.description}</div>
+                      <div className="muted small">{m.description}</div>
                     </td>
-                    <td>{teamName[m?.owner_team ?? ""] ?? "n/a"}</td>
+                    <td>{teamName[m.owner_team] ?? "n/a"}</td>
                     <td>{d.depends_on.length ? d.depends_on.join(", ") : "Start"}</td>
                     <td>
                       <input
@@ -161,14 +167,8 @@ export function Roadmap({ shared, controls }: { shared: Shared; controls: Contro
                       />
                     </td>
                     <td>
-                      {m ? (
-                        <>
-                          {m.metric.name}
-                          <div className="muted small">Target {formatMetricTarget(m.metric.target, m.metric.unit)}</div>
-                        </>
-                      ) : (
-                        "n/a"
-                      )}
+                      {m.metric.name}
+                      <div className="muted small">Target {formatMetricTarget(m.metric.target, m.metric.unit)}</div>
                     </td>
                   </tr>
                 );

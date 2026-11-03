@@ -17,6 +17,7 @@ import {
   actionMixRows,
   adoptionRows,
   attentionItems,
+  benefitSpread,
   cashRows,
   cumulativeRows,
   goalProgress,
@@ -234,5 +235,65 @@ describe("unit formatting for assumptions and explanations", () => {
     expect(formatByUnit(3000, "EUR/hire")).toBe("EUR 3,000 per hire");
     expect(formatByUnit(12, "days/level")).toBe("12 days/level");
     expect(formatByUnit(1.35, "multiplier")).toBe("1.35×");
+  });
+});
+
+describe("cumulative rows with missing options", () => {
+  it("leaves a missing option's value undefined and uses no rows when the first option is absent", () => {
+    const monthly = [point("2027-01", { cumulative_net_eur: -3 })];
+    const onlyHire = { hire_led: scenario("hire_led", monthly) } as Partial<Record<ScenarioId, ScenarioResult>>;
+    expect(cumulativeRows(onlyHire, ["hire_led", "hybrid"])).toEqual([{ month: "2027-01", hire_led: -3, hybrid: undefined }]);
+    // The first option sets the month axis, so a missing first option leaves no rows.
+    expect(cumulativeRows(onlyHire, ["hybrid", "hire_led"])).toEqual([]);
+  });
+});
+
+describe("goal progress, attention and benefit spread edge cases", () => {
+  it("reports zero share and no shortfall when the option has no monthly data", () => {
+    const goal = {
+      baseline: { reviews_per_year: 1, cost_per_review_eur: 10, ai_assisted_share: 0 },
+      target: { ai_assisted_share: 0.6, cost_per_review_reduction_pct: 0.35 },
+      horizon_end: "2028-12",
+    } as unknown as Goal;
+    const p = goalProgress(goal, [], 0.35);
+    expect(p.shareAtDeadline).toBe(0);
+    expect(p.reductionModelled).toBe(0);
+  });
+
+  it("uses the no-payback wording and the success wording for coverage", () => {
+    const plan = {
+      scenarios: { hybrid: scenario("hybrid", [], { payback_month: null, run_rate_net_eur_year: -5000 }) },
+    } as unknown as PlanResponse;
+    const items = attentionItems(plan, "hybrid");
+    expect(items.find((i) => i.id === "payback")?.detail).toContain("-EUR 5,000");
+    expect(items.find((i) => i.id === "shortfall")?.title).toBe("Every requirement is covered");
+  });
+
+  it("pluralises the shortfall count when there is more than one", () => {
+    const shortfall = {
+      requirement_id: "R01",
+      milestone_id: "M1",
+      skill_id: "x",
+      months: ["2027-01"],
+      unmet_fte_months: 0.5,
+      reason: "lead_time_too_short" as const,
+    };
+    const plan = {
+      scenarios: { hybrid: { ...scenario("hybrid", []), shortfalls: [shortfall, shortfall] } },
+    } as unknown as PlanResponse;
+    const items = attentionItems(plan, "hybrid");
+    expect(items.find((i) => i.id === "shortfall")?.title).toBe("2 supply shortfalls");
+    expect(items.find((i) => i.id === "shortfall")?.detail).toBe("1.00 unmet FTE-months. See the Workforce page for the requirements affected.");
+  });
+
+  it("measures the spread of benefit between options, treating missing options as zero", () => {
+    const plan = {
+      scenarios: {
+        hybrid: scenario("hybrid", [], { benefit_eur: 500 }),
+        hire_led: scenario("hire_led", [], { benefit_eur: 200 }),
+      },
+    } as unknown as PlanResponse;
+    expect(benefitSpread(plan, ["hybrid", "hire_led"])).toBe(300);
+    expect(benefitSpread(plan, ["hybrid", "reskill_led"])).toBe(500);
   });
 });

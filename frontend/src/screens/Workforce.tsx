@@ -10,7 +10,7 @@ import { coverageRows } from "../lib/viewModels";
 export function Workforce({ shared }: { shared: Shared }) {
   const { plan, skillLabels, caseInfo } = shared;
   const [scenario, setScenario] = useState<ScenarioId>(RECOMMENDED);
-  const [milestoneId, setMilestoneId] = useState<string>(plan.milestones[0]?.id ?? "M1");
+  const [milestoneId, setMilestoneId] = useState<string>(plan.milestones[0].id);
   const [evidenceFor, setEvidenceFor] = useState<string | null>(null);
 
   const teamName = useMemo(() => Object.fromEntries(caseInfo.company.teams.map((t) => [t.id, t.name])), [caseInfo]);
@@ -21,6 +21,7 @@ export function Workforce({ shared }: { shared: Shared }) {
   const shortfalls = result.shortfalls.filter((s) => s.milestone_id === milestone.id);
   const evidenceReq = requirements.find((r) => r.id === evidenceFor) ?? null;
   const evidenceFit = evidenceReq ? fitById.get(evidenceReq.id) : undefined;
+  const evidenceIds = evidenceFit?.evidence_employee_ids ?? [];
 
   const columns: Column<Requirement>[] = [
     { key: "role", header: "Role (mock)", render: (r) => r.role },
@@ -181,9 +182,9 @@ export function Workforce({ shared }: { shared: Shared }) {
             <div>
               <h3>Sample employee IDs (synthetic, up to 5)</h3>
               <p className="muted small">IDs are evidence for the count only. They are not a ranking and do not select anyone.</p>
-              {(evidenceFit.evidence_employee_ids ?? []).length ? (
+              {evidenceIds.length ? (
                 <ul className="id-list">
-                  {(evidenceFit.evidence_employee_ids ?? []).map((id) => (
+                  {evidenceIds.map((id) => (
                     <li key={id}>
                       <code>{id}</code>
                     </li>
