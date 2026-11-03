@@ -26,11 +26,13 @@ interface ShellProps {
   onCaseChange: (c: CaseId) => void;
   busy: boolean;
   edited: boolean;
+  /** False until the mock analysis has finished. Navigation and the case selector stay hidden until then. */
+  navigable: boolean;
   children: ReactNode;
 }
 
 /** Frame for every screen: navigation, global case selector, theme and the demo-data notice. */
-export function AppShell({ page, onNavigate, caseId, onCaseChange, busy, edited, children }: ShellProps) {
+export function AppShell({ page, onNavigate, caseId, onCaseChange, busy, edited, navigable, children }: ShellProps) {
   const { preference, setPreference } = useTheme();
   const [legendOpen, setLegendOpen] = useState(false);
 
@@ -51,6 +53,7 @@ export function AppShell({ page, onNavigate, caseId, onCaseChange, busy, edited,
           </div>
         </div>
 
+        {navigable ? (
         <nav aria-label="Pages" className="nav">
           <ul>
             {PAGES.map((p, i) => (
@@ -76,6 +79,7 @@ export function AppShell({ page, onNavigate, caseId, onCaseChange, busy, edited,
             ))}
           </ul>
         </nav>
+        ) : null}
 
         <div className="sidebar-foot">
           <div className="foot-label">Theme</div>
@@ -96,10 +100,14 @@ export function AppShell({ page, onNavigate, caseId, onCaseChange, busy, edited,
             <span>AI-assisted KYC/AML reviews</span>
           </div>
           <div className="topbar-controls">
-            <Segmented label="Assumption case" options={CASE_OPTIONS} value={caseId} onChange={onCaseChange} size="sm" />
-            <span className={`sync${busy ? " sync-busy" : ""}`} role="status" aria-live="polite">
-              {busy ? "Recalculating…" : edited ? "Showing edited inputs" : "Default inputs"}
-            </span>
+            {navigable ? (
+              <>
+                <Segmented label="Assumption case" options={CASE_OPTIONS} value={caseId} onChange={onCaseChange} size="sm" />
+                <span className={`sync${busy ? " sync-busy" : ""}`} role="status" aria-live="polite">
+                  {busy ? "Recalculating…" : edited ? "Showing edited inputs" : "Default inputs"}
+                </span>
+              </>
+            ) : null}
           </div>
         </header>
 

@@ -2,18 +2,35 @@
 
 Usage (from backend/):  uv run python tools/gen_workforce.py
 
-Writes strategy_compiler/fixtures/workforce.json. Every record is fictional: IDs only, no names,
+Writes strategy_compiler/fixtures/workforce.csv. Every record is fictional: IDs only, no names,
 no personal or sensitive attributes. Skill profiles are assumptions that shape the demo supply.
+
+Columns: employee_id, team_id, role, grade, fte, availability, cost_band, is_mock, skills_json, training_json.
+skills_json is a JSON object (skill_id -> proficiency 1..5). training_json is a JSON list of training records.
+The loader in config.py parses this file; the label that used to sit in a _meta block lives in config.LABELS.
 """
 
 from __future__ import annotations
 
+import csv
 import json
 import random
 from pathlib import Path
 
 SEED = 20261103
-OUT = Path(__file__).resolve().parents[1] / "strategy_compiler" / "fixtures" / "workforce.json"
+OUT = Path(__file__).resolve().parents[1] / "strategy_compiler" / "fixtures" / "workforce.csv"
+COLUMNS = [
+    "employee_id",
+    "team_id",
+    "role",
+    "grade",
+    "fte",
+    "availability",
+    "cost_band",
+    "is_mock",
+    "skills_json",
+    "training_json",
+]
 
 # core: skill -> (min, max) proficiency, always present
 # secondary: skill -> (min, max, probability) present with probability p
@@ -131,19 +148,29 @@ def build(seed: int = SEED) -> list[dict]:
     return employees
 
 
+def to_row(e: dict) -> dict[str, str]:
+    return {
+        "employee_id": e["employee_id"],
+        "team_id": e["team_id"],
+        "role": e["role"],
+        "grade": e["grade"],
+        "fte": f"{e['fte']:g}",
+        "availability": f"{e['availability']:.2f}",
+        "cost_band": e["cost_band"],
+        "is_mock": "true",
+        "skills_json": json.dumps(e["skills"], ensure_ascii=False, sort_keys=True),
+        "training_json": json.dumps(e["training_history"], ensure_ascii=False),
+    }
+
+
 def main() -> None:
     employees = build()
-    payload = {
-        "_meta": {
-            "label": "SYNTHETIC WORKFORCE - fictional employees in an illustrative KBC example case. Not real people, not KBC staff.",
-            "generator": "backend/tools/gen_workforce.py",
-            "seed": SEED,
-            "availability_meaning": "Share of FTE available for programme work after business-as-usual load.",
-            "sensitive_attributes": "none recorded",
-        },
-        "employees": employees,
-    }
-    OUT.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    with OUT.open("w", encoding="utf-8", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=COLUMNS, lineterminator="\n")
+        writer.writeheader()
+        for e in employees:
+            writer.writerow(to_row(e))
     print(f"wrote {len(employees)} synthetic employees to {OUT}")
 
 
